@@ -1,4 +1,6 @@
+use std::io::Write;
 use std::ffi::OsStr;
+use std::fs::File;
 use std::path::{Path, PathBuf};
 /// The $trash/info directory contains an “information file” for every file and directory in $trash/files. This file MUST have exactly the same name as the file or directory in $trash/files, plus the extension “.trashinfo”7.
 ///
@@ -22,7 +24,7 @@ pub fn make_info_file_path(file_name: &OsStr, trash_info_path: &Path) -> PathBuf
     trash_info_path.join(file_name)
 }
 
-pub fn build_info_file(original_path: &str, file_name: &OsStr, trash: &Trash, deletion_date: Duration) -> Result<()> {
+pub fn build_info_file(original_path: &Path, file_name: &OsStr, trash: &Trash, deletion_date: Duration) -> Result<()> {
     // The date and time are to be in the YYYY-MM-DDThh:mm:ss format.
     // The time zone should be the user's (or filesystem's) local time.
     let rfc3339 = ffi::format_time(deletion_date)?;
@@ -32,6 +34,15 @@ pub fn build_info_file(original_path: &str, file_name: &OsStr, trash: &Trash, de
     
     // This file MUST have exactly the same name as the file or directory in $trash/files, plus the extension “.trashinfo”.
     let info_file_path = make_info_file_path(file_name, info_path);
+
+    let mut info_file = File::create(info_file_path)?;
+
+    writeln!(info_file, "[Trash Info]")?;
+    // TODO: is this correct when `original_path` isn't valid UTF-8?
+    writeln!(info_file, "Path={}", original_path.display())?;
+    writeln!(info_file, "DeletionDate={}", &rfc3339)?;
+
+    info_file.sync_all()?;
 
     Ok(())
 }

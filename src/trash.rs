@@ -1,6 +1,6 @@
 use std::{ffi::{OsString}, fs, path::{Path, PathBuf}, time::{Instant, SystemTime, UNIX_EPOCH}};
 
-use crate::error::{Error, Result};
+use crate::{error::{Error, Result}, info_file};
 use crate::{move_file::move_file};
 
 #[derive(Debug)]
@@ -92,7 +92,9 @@ pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
     
     _send_to_trash(&path, trash)?;
 
-    // build_info_file();
+    let todo = OsString::from("GET THE FILENAME FROM _send_to_trash");
+
+    info_file::build_info_file(&path, &todo, &trash, now)?;
 
     Ok(())
 }
