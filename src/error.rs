@@ -9,7 +9,7 @@ pub enum Error {
     #[error("Failed to convert bytes into a String")]
     StringFromBytesError,
     #[error("UTF8 error: {0}")]
-    Utf8(#[from] Utf8Error)
+    Utf8(#[from] Utf8Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

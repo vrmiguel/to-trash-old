@@ -1,13 +1,21 @@
-use std::{ffi::{OsStr, OsString}, fs, path::{Path, PathBuf}, time::{Instant, SystemTime, UNIX_EPOCH}};
+use std::{
+    ffi::OsString,
+    fs,
+    path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
+};
 
-use crate::{error::{Error, Result}, info_file};
-use crate::{move_file::move_file};
+use crate::move_file::move_file;
+use crate::{
+    error::{Error, Result},
+    info_file,
+};
 
 #[derive(Debug)]
 pub struct Trash {
     pub files: PathBuf,
     pub directory_sizes: PathBuf,
-    pub info: PathBuf
+    pub info: PathBuf,
 }
 
 impl Trash {
@@ -39,13 +47,12 @@ pub fn make_unique_file_name(path: &Path, dir: &Path) -> OsString {
             return new_file_name;
         }
     }
-    
+
     unreachable!("control really shouldn't reach this")
 }
 
 /// Sends the file given by `path` to the given trash structure
 fn _send_to_trash(path: &Path, trash: &Trash) -> Result<OsString> {
-    
     // TODO: this could be in a separate function
     let file_name = if !path.ends_with("..") || path != Path::new(".") {
         path.file_name().unwrap().to_owned()
@@ -65,11 +72,16 @@ fn _send_to_trash(path: &Path, trash: &Trash) -> Result<OsString> {
         let new_file_name = make_unique_file_name(&Path::new(&file_name), &*trash.files);
         let file_path = trash.files.join(&new_file_name);
         move_file(path, &*file_path)?;
-        
+
         Ok(new_file_name)
     } else {
         let new_path = trash.files.join(&file_name);
-        println!("Files: {}, path: {}, new-path: {}", trash.files.display(), path.display(), new_path.display());
+        println!(
+            "Files: {}, path: {}, new-path: {}",
+            trash.files.display(),
+            path.display(),
+            new_path.display()
+        );
         move_file(path, &new_path)?;
 
         Ok(file_name)
@@ -78,7 +90,6 @@ fn _send_to_trash(path: &Path, trash: &Trash) -> Result<OsString> {
 
 /// Sends a file to trash
 pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
-    
     let path = fs::canonicalize(to_be_removed)?;
 
     // if path.starts_with(&*HOME_DIR) {
@@ -91,7 +102,7 @@ pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("it seems that time went backwards!");
-    
+
     let file_name = _send_to_trash(&path, trash)?;
 
     info_file::build_info_file(&path, &file_name, &trash, now)?;

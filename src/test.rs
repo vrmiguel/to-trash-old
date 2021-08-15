@@ -1,10 +1,20 @@
-use std::{ffi::{OsStr, OsString}, fs, fs::File, io::Write, path::{Path, PathBuf}};
+use std::{
+    ffi::{OsStr, OsString},
+    fs,
+    fs::File,
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 use tempfile;
 
 use rand::{rngs::SmallRng, RngCore, SeedableRng};
 
-use crate::{HOME_DIR, info_file, move_file, trash::{self, Trash, make_unique_file_name}};
+use crate::{
+    info_file, move_file,
+    trash::{self, make_unique_file_name, Trash},
+    HOME_DIR,
+};
 
 fn dummy_bytes() -> Vec<u8> {
     let mut rng = SmallRng::from_entropy();
@@ -31,7 +41,7 @@ fn test_send_to_trash() {
     // let dir = tempfile::tempdir().unwrap();
     let dir_path = dir.path();
     let trash = Trash::new(dir_path);
-    
+
     dbg!(&trash);
 
     fs::create_dir(&trash.directory_sizes).unwrap();

@@ -1,4 +1,4 @@
-use std::{ffi::CString, str, mem, time::Duration};
+use std::{ffi::CString, mem, str, time::Duration};
 
 use libc::{c_char, localtime_r, size_t, time, tm};
 
@@ -7,10 +7,12 @@ use crate::error::{Error, Result};
 const BUF_SIZ: usize = 64;
 
 extern "C" {
-    pub fn strftime(s: *mut c_char, maxsize: size_t,
+    pub fn strftime(
+        s: *mut c_char,
+        maxsize: size_t,
         format: *const c_char,
-        timeptr: *const tm)
-        -> size_t;
+        timeptr: *const tm,
+    ) -> size_t;
 }
 
 pub fn str_from_u8(buf: &[u8]) -> Result<&str> {
@@ -45,7 +47,14 @@ pub fn format_time(now: Duration) -> Result<String> {
     // the given string has an interior nul char.
     let format = CString::new("%FT%T").unwrap();
 
-    unsafe { strftime(char_buf.as_mut_ptr(), BUF_SIZ, format.as_ptr(), &new_time as *const tm) };
+    unsafe {
+        strftime(
+            char_buf.as_mut_ptr(),
+            BUF_SIZ,
+            format.as_ptr(),
+            &new_time as *const tm,
+        )
+    };
 
     let char_buf: Vec<_> = char_buf.iter().map(|&ch| ch as u8).collect();
 

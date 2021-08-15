@@ -1,8 +1,8 @@
 mod error;
 mod ffi;
 mod home;
-mod move_file;
 mod info_file;
+mod move_file;
 mod trash;
 
 #[cfg(test)]
