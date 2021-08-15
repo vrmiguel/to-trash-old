@@ -7,6 +7,29 @@ use std::{
 use crate::error::{Error, Result};
 use crate::{move_file::move_file, HOME_DIR, HOME_TRASH, HOME_TRASH_FILES};
 
+// Renames the file given by `path` until a path
+// not contained in `dir` is found.
+//
+// Example: if `foo` exists in `dir`, then this function returns `foo-1`
+//          if `foo` and `foo-1` exist in `dir`, then this function returns `foo-2`
+// Note: assumes that `path` exists in `dir`!
+pub fn make_unique_file_name(path: &Path, dir: &Path) -> OsString {
+    // let mut file_name = OsString::from(path);
+    let file_name = path.as_os_str();
+
+    for i in 1_u64.. {
+        let suffix = format!("-{}", i);
+        let mut new_file_name = file_name.to_owned();
+        new_file_name.push(suffix);
+        let path = dir.join(&new_file_name);
+        if !path.exists() {
+            return new_file_name;
+        }
+    }
+    
+    unreachable!("control really shouldn't reach this")
+}
+
 /// Sends the file given by `path` to the user's home trash.
 /// Assumes that `path` starts with HOME_DIR
 fn send_to_home_trash(path: &Path) -> Result<()> {

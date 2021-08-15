@@ -4,7 +4,13 @@ mod home;
 mod move_file;
 mod trash;
 
-use std::{env, path::{Path, PathBuf}};
+#[cfg(test)]
+mod test;
+
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
 
 use lazy_static::lazy_static;
 
