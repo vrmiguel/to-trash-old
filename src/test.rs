@@ -1,4 +1,4 @@
-use std::{ffi::OsString, fmt::format, fs::File, io::Write, path::Path};
+use std::{ffi::OsString, fs::File, io::Write, path::Path};
 
 use tempfile;
 
@@ -14,6 +14,7 @@ fn dummy_bytes() -> Vec<u8> {
     vec
 }
 
+// TODO: this test is really ugly
 #[test]
 fn make_unique_file_name_1() {
     let dir = tempfile::tempdir().unwrap();

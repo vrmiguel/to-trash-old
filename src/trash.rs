@@ -49,7 +49,14 @@ fn send_to_home_trash(path: &Path) -> Result<()> {
 
     let file_in_trash = HOME_TRASH_FILES.join(file_name);
     if file_in_trash.exists() {
-        // TODO: find new name for this file
+        // According to the trash-spec 1.0 states that, a file in the trash
+        // must not be overwritten by a newer file with the same filename.
+        // For this reason, we'll make a new unique filename for the file we're deleting.
+        let file_name = make_unique_file_name(&Path::new(file_name), &*HOME_TRASH_FILES);
+        let file_name = HOME_TRASH_FILES.join(file_name);
+        move_file(path, Path::new(&*file_name))?;
+    } else {
+        move_file(path, &*HOME_TRASH_FILES)?;
     }
 
     Ok(())
