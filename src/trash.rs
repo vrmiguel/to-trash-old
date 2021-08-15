@@ -1,6 +1,6 @@
 use std::{
     ffi::OsString,
-    fs,
+    fs, io,
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -10,6 +10,8 @@ use crate::{
     error::{Error, Result},
     info_file,
 };
+
+use walkdir::WalkDir;
 
 #[derive(Debug)]
 pub struct Trash {
@@ -112,4 +114,35 @@ pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Calculates real size of file at path, recursive if it's a directory.
+///
+/// Real size is always multiple of INODE_SIZE, but `fs::metadata()` uses `stat` and
+/// returns the apparent size.
+///
+/// TODO: consider using a crate that already does this calculation.
+pub fn get_file_size(path: impl AsRef<Path>) -> io::Result<u64> {
+    /// Adjust apparent size to real size.
+    /// TODO: grab real INODE size.
+    /// TODO2: INODE size may change if we are crossing partitions.
+    fn adjust_apparent_size_to_inode_size(size: u64) -> u64 {
+        const INODE_SIZE: u64 = 4096;
+        let remainder = size % INODE_SIZE;
+        if remainder == 0 {
+            size
+        } else {
+            size + INODE_SIZE - remainder
+        }
+    }
+
+    let mut sum = 0;
+
+    for entry in WalkDir::new(path) {
+        let entry = entry?;
+        let path = entry.path();
+        let size = fs::metadata(path)?.len() as u64;
+        sum += adjust_apparent_size_to_inode_size(size);
+    }
+    Ok(sum)
 }
