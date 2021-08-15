@@ -86,9 +86,13 @@ pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
     //     todo!("check for parent trash dir")
     // }
 
-    let now = SystemTime::now();
-    let timestamp = now
+    let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("it seems that time went backwards!");
-    _send_to_trash(&path, trash)
+    
+    _send_to_trash(&path, trash)?;
+
+    // build_info_file();
+
+    Ok(())
 }

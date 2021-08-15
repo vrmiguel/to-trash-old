@@ -26,6 +26,7 @@ pub fn str_from_u8(buf: &[u8]) -> Result<&str> {
 pub fn format_time(now: Duration) -> Result<String> {
     let mut timestamp = now.as_secs();
 
+    // Safety: the all-zero byte-pattern is valid struct tm
     let mut new_time: tm = unsafe { mem::zeroed() };
 
     // Safety: time is memory-safe

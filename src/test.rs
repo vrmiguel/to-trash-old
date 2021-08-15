@@ -1,10 +1,10 @@
-use std::{ffi::OsString, fs, fs::File, io::Write, path::Path};
+use std::{ffi::{OsStr, OsString}, fs, fs::File, io::Write, path::{Path, PathBuf}};
 
 use tempfile;
 
 use rand::{rngs::SmallRng, RngCore, SeedableRng};
 
-use crate::{HOME_DIR, move_file, trash::{self, Trash, make_unique_file_name}};
+use crate::{HOME_DIR, info_file, move_file, trash::{self, Trash, make_unique_file_name}};
 
 fn dummy_bytes() -> Vec<u8> {
     let mut rng = SmallRng::from_entropy();
@@ -12,6 +12,17 @@ fn dummy_bytes() -> Vec<u8> {
     let mut vec = vec![0; quantity as usize];
     rng.fill_bytes(&mut vec);
     vec
+}
+
+#[test]
+fn test_make_info_file_path() {
+    let trash_info = Path::new("/user/dummy/.local/share/Trash/info");
+    let file_name = OsStr::new("deleted-file");
+
+    assert_eq!(
+        info_file::make_info_file_path(file_name, trash_info),
+        PathBuf::from("/user/dummy/.local/share/Trash/info/deleted-file.trashinfo")
+    );
 }
 
 #[test]
