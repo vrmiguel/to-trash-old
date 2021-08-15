@@ -1,4 +1,4 @@
-use std::{ffi::{OsString}, fs, path::{Path, PathBuf}, time::{Instant, SystemTime, UNIX_EPOCH}};
+use std::{ffi::{OsStr, OsString}, fs, path::{Path, PathBuf}, time::{Instant, SystemTime, UNIX_EPOCH}};
 
 use crate::{error::{Error, Result}, info_file};
 use crate::{move_file::move_file};
@@ -44,34 +44,36 @@ pub fn make_unique_file_name(path: &Path, dir: &Path) -> OsString {
 }
 
 /// Sends the file given by `path` to the given trash structure
-fn _send_to_trash(path: &Path, trash: &Trash) -> Result<()> {
-    let canonicalized: PathBuf;
-
+fn _send_to_trash(path: &Path, trash: &Trash) -> Result<OsString> {
+    
+    // TODO: this could be in a separate function
     let file_name = if !path.ends_with("..") || path != Path::new(".") {
-        path.file_name().unwrap()
+        path.file_name().unwrap().to_owned()
     } else {
-        canonicalized = fs::canonicalize(&path)?;
+        let canonicalized = fs::canonicalize(&path)?;
         match canonicalized.file_name() {
-            Some(canon_path) => canon_path,
+            Some(canon_path) => canon_path.to_owned(),
             None => return Err(Error::FailedToObtainFileName(path.into())),
         }
     };
 
-    let file_in_trash = trash.files.join(file_name);
+    let file_in_trash = trash.files.join(&file_name);
     if file_in_trash.exists() {
         // According to the trash-spec 1.0 states that, a file in the trash
         // must not be overwritten by a newer file with the same filename.
         // For this reason, we'll make a new unique filename for the file we're deleting.
-        let file_name = make_unique_file_name(&Path::new(file_name), &*trash.files);
-        let file_name = trash.files.join(file_name);
-        move_file(path, Path::new(&*file_name))?;
+        let new_file_name = make_unique_file_name(&Path::new(&file_name), &*trash.files);
+        let file_path = trash.files.join(&new_file_name);
+        move_file(path, &*file_path)?;
+        
+        Ok(new_file_name)
     } else {
         let new_path = trash.files.join(&file_name);
         println!("Files: {}, path: {}, new-path: {}", trash.files.display(), path.display(), new_path.display());
         move_file(path, &new_path)?;
-    }
 
-    Ok(())
+        Ok(file_name)
+    }
 }
 
 /// Sends a file to trash
@@ -90,11 +92,9 @@ pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
         .duration_since(UNIX_EPOCH)
         .expect("it seems that time went backwards!");
     
-    _send_to_trash(&path, trash)?;
+    let file_name = _send_to_trash(&path, trash)?;
 
-    let todo = OsString::from("GET THE FILENAME FROM _send_to_trash");
-
-    info_file::build_info_file(&path, &todo, &trash, now)?;
+    info_file::build_info_file(&path, &file_name, &trash, now)?;
 
     Ok(())
 }
