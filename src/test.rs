@@ -1,10 +1,10 @@
-use std::{ffi::OsString, fs::File, io::Write, path::Path};
+use std::{ffi::OsString, fs, fs::File, io::Write, path::Path};
 
 use tempfile;
 
 use rand::{rngs::SmallRng, RngCore, SeedableRng};
 
-use crate::{move_file, trash::make_unique_file_name};
+use crate::{HOME_DIR, move_file, trash::{self, Trash, make_unique_file_name}};
 
 fn dummy_bytes() -> Vec<u8> {
     let mut rng = SmallRng::from_entropy();
@@ -12,6 +12,32 @@ fn dummy_bytes() -> Vec<u8> {
     let mut vec = vec![0; quantity as usize];
     rng.fill_bytes(&mut vec);
     vec
+}
+
+#[test]
+fn test_send_to_trash() {
+    let dir = tempfile::tempdir_in(&*HOME_DIR).unwrap();
+    // let dir = tempfile::tempdir().unwrap();
+    let dir_path = dir.path();
+    let trash = Trash::new(dir_path);
+    
+    fs::create_dir(&trash.directory_sizes).unwrap();
+    fs::create_dir(&trash.files).unwrap();
+    fs::create_dir(&trash.info).unwrap();
+
+    let dummy_path = dir_path.join("dummy");
+    let mut dummy = File::create(&*dummy_path).unwrap();
+    dummy.write_all(&dummy_bytes()).unwrap();
+
+    trash::send_to_trash(dummy_path.as_os_str().to_os_string()).unwrap();
+
+    drop(dir);
+    // assert!(!dummy_path.exists());
+
+    // The file should now be in the trash
+    let new_path = trash.files.join("dummy");
+
+    assert!(new_path.exists());
 }
 
 #[test]
