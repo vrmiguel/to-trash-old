@@ -113,7 +113,7 @@ fn rfc3339_formatting() {
     );
 }
 
-// TODO: this test is really ugly
+// TODO: this test could look better
 #[test]
 fn test_make_unique_file_name() {
     let dir = tempfile::tempdir().unwrap();
