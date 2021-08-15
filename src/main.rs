@@ -1,37 +1,57 @@
+mod error;
 mod ffi;
+mod home;
+mod move_file;
 
-use std::{env, ffi::OsString, path::PathBuf};
+use core::panic;
+use std::{env, ffi::OsString, fs, path::{Path, PathBuf}};
 
+use lazy_static::lazy_static;
 use rayon::prelude::*;
 
-fn remove_file(to_be_removed: &OsString) {
-    // to_be_removed.par_iter().map(|x|)
+use crate::error::{Error, Result};
+
+lazy_static! {
+    pub static ref HOME_DIR: PathBuf =
+        home::home_dir().expect("failed to obtain user's home directory!");
+    pub static ref HOME_TRASH: PathBuf = home::home_trash_path();
+    pub static ref HOME_TRASH_FILES: PathBuf = HOME_TRASH.join("files");
+    pub static ref HOME_TRASH_SIZES: PathBuf = HOME_TRASH.join("directorysizes");
+    pub static ref HOME_TRASH_INFO: PathBuf = HOME_TRASH.join("info");
 }
 
-fn home_dir() -> Option<PathBuf> {
-    if let Ok(home_dir) = std::env::var("HOME") {
-        Some(PathBuf::from(home_dir))
+/// Sends a file to trash
+fn send_to_trash(to_be_removed: OsString) -> Result<()> {
+    let path = PathBuf::from(to_be_removed);
+
+    let parent = path.parent().unwrap_or(Path::new("/"));
+
+    let canonicalized: PathBuf;
+
+    let file_name = if !path.ends_with("..") && path != Path::new(".") { 
+        path.file_name().unwrap()
     } else {
-        ffi::get_home_dir()
+        canonicalized = fs::canonicalize(&path)?;
+        match canonicalized.file_name() {
+            Some(canon_path) => canon_path,
+            None => return Err(Error::FailedToObtainFileName(path.clone())),
+        }
+    };
+
+    if path.starts_with(&*HOME_DIR) {
+        // TODO: check for preexisting file
+        move_file::move_file(path.as_ref(), &*HOME_TRASH)?;
+        
+    } else {
+        todo!("check for parent trash dir")
     }
+
+    Ok(())
 }
 
-/// The path of the home trash directory, as specified by FreeDesktop's trash-spec 1.0
-/// Ref.: https://specifications.freedesktop.org/trash-spec/trashspec-1.0.html
-fn home_trash_path() -> PathBuf {
-    if let Ok(xdg_home) = std::env::var("XDG_DATA_HOME") {
-        return PathBuf::from(xdg_home);
-    }
-    
-    let home_dir = home_dir().expect("failed to obtain user's home directory!");
+fn main() -> Result<()> {
 
-    home_dir.join(".local/share/Trash")
-}
+    env::args_os().skip(1).map(send_to_trash).for_each(drop);
 
-fn main() {
-    let to_be_removed: Vec<_> = env::args_os().skip(1).collect();
-
-    dbg!(home_trash_path());
-
-    // to_be_removed.par_iter().map(|x)
+    Ok(())
 }

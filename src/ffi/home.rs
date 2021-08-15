@@ -1,7 +1,7 @@
 use std::ffi::OsStr;
+use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 use std::{ffi::CStr, mem, ptr};
-use std::os::unix::ffi::OsStrExt;
 
 use libc::{getpwuid_r, passwd};
 
