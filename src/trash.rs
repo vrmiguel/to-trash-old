@@ -1,8 +1,7 @@
-use std::{
-    ffi::{OsString},
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{ffi::{OsString}, fs, path::{Path, PathBuf}, time::{Instant, SystemTime, UNIX_EPOCH}};
+
+use crate::error::{Error, Result};
+use crate::{move_file::move_file};
 
 #[derive(Debug)]
 pub struct Trash {
@@ -20,9 +19,6 @@ impl Trash {
         }
     }
 }
-
-use crate::error::{Error, Result};
-use crate::{move_file::move_file};
 
 // Renames the file given by `path` until a path
 // not contained in `dir` is found.
@@ -80,6 +76,7 @@ fn _send_to_trash(path: &Path, trash: &Trash) -> Result<()> {
 
 /// Sends a file to trash
 pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
+    
     let path = fs::canonicalize(to_be_removed)?;
 
     // if path.starts_with(&*HOME_DIR) {
@@ -89,5 +86,9 @@ pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
     //     todo!("check for parent trash dir")
     // }
 
+    let now = SystemTime::now();
+    let timestamp = now
+        .duration_since(UNIX_EPOCH)
+        .expect("it seems that time went backwards!");
     _send_to_trash(&path, trash)
 }
