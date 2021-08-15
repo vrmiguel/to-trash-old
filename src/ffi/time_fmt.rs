@@ -37,7 +37,6 @@ pub fn format_time(now: Duration) -> Result<String> {
     // TODO: it'd be better to call `time(NULL)` here
     let ltime = unsafe { time(&mut timestamp as *mut u64 as *mut i64) };
 
-    
     unsafe { tzset() };
 
     // Safety: localtime_r is memory safe, threadsafe.

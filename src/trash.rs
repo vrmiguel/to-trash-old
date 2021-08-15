@@ -107,5 +107,9 @@ pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
 
     info_file::build_info_file(&path, &file_name, &trash, now)?;
 
+    if path.is_dir() {
+        // Update directorysizes
+    }
+
     Ok(())
 }
