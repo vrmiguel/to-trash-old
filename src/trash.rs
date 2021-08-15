@@ -69,7 +69,8 @@ fn _send_to_trash(path: &Path, trash: &Trash) -> Result<()> {
         let file_name = trash.files.join(file_name);
         move_file(path, Path::new(&*file_name))?;
     } else {
-        move_file(path, &*trash.files)?;
+        let new_path = trash.files.join(&path);
+        move_file(path, &new_path)?;
     }
 
     Ok(())
