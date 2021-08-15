@@ -1,11 +1,27 @@
 use std::{
-    ffi::{OsStr, OsString},
+    ffi::{OsString},
     fs,
     path::{Path, PathBuf},
 };
 
+pub struct Trash {
+    pub files: PathBuf,
+    pub directory_sizes: PathBuf,
+    pub info: PathBuf
+}
+
+impl Trash {
+    pub fn new(trash_root: &Path) -> Self {
+        Self {
+            files: trash_root.join("files"),
+            directory_sizes: trash_root.join("directorysizes"),
+            info: trash_root.join("info"),
+        }
+    }
+}
+
 use crate::error::{Error, Result};
-use crate::{move_file::move_file, HOME_DIR, HOME_TRASH, HOME_TRASH_FILES};
+use crate::{move_file::move_file, HOME_DIR, HOME_TRASH};
 
 // Renames the file given by `path` until a path
 // not contained in `dir` is found.
@@ -30,11 +46,8 @@ pub fn make_unique_file_name(path: &Path, dir: &Path) -> OsString {
     unreachable!("control really shouldn't reach this")
 }
 
-/// Sends the file given by `path` to the user's home trash.
-/// Assumes that `path` starts with HOME_DIR
-fn send_to_home_trash(path: &Path) -> Result<()> {
-    debug_assert!(path.starts_with(&*HOME_DIR));
-
+/// Sends the file given by `path` to the given trash structure
+fn _send_to_trash(path: &Path, trash: &Trash) -> Result<()> {
     let canonicalized: PathBuf;
 
     let file_name = if !path.ends_with("..") || path != Path::new(".") {
@@ -47,16 +60,16 @@ fn send_to_home_trash(path: &Path) -> Result<()> {
         }
     };
 
-    let file_in_trash = HOME_TRASH_FILES.join(file_name);
+    let file_in_trash = trash.files.join(file_name);
     if file_in_trash.exists() {
         // According to the trash-spec 1.0 states that, a file in the trash
         // must not be overwritten by a newer file with the same filename.
         // For this reason, we'll make a new unique filename for the file we're deleting.
-        let file_name = make_unique_file_name(&Path::new(file_name), &*HOME_TRASH_FILES);
-        let file_name = HOME_TRASH_FILES.join(file_name);
+        let file_name = make_unique_file_name(&Path::new(file_name), &*trash.files);
+        let file_name = trash.files.join(file_name);
         move_file(path, Path::new(&*file_name))?;
     } else {
-        move_file(path, &*HOME_TRASH_FILES)?;
+        move_file(path, &*trash.files)?;
     }
 
     Ok(())
@@ -64,11 +77,11 @@ fn send_to_home_trash(path: &Path) -> Result<()> {
 
 /// Sends a file to trash
 pub fn send_to_trash(to_be_removed: OsString) -> Result<()> {
-    let path = PathBuf::from(to_be_removed);
+    let path = fs::canonicalize(to_be_removed)?;
 
     if path.starts_with(&*HOME_DIR) {
         // TODO: check for preexisting file
-        move_file(path.as_ref(), &*HOME_TRASH)?;
+        _send_to_trash(path.as_ref(), &HOME_TRASH)?;
     } else {
         todo!("check for parent trash dir")
     }
