@@ -4,7 +4,7 @@ use tempfile;
 
 use rand::{rngs::SmallRng, RngCore, SeedableRng};
 
-use crate::trash::make_unique_file_name;
+use crate::{move_file, trash::make_unique_file_name};
 
 fn dummy_bytes() -> Vec<u8> {
     let mut rng = SmallRng::from_entropy();
@@ -14,9 +14,37 @@ fn dummy_bytes() -> Vec<u8> {
     vec
 }
 
+#[test]
+fn test_move_file() {
+    let dir = tempfile::tempdir().unwrap();
+    let dir_path = dir.path();
+
+    let contents = dummy_bytes();
+
+    let file_path = dir_path.join("dummy");
+    {
+        let mut file = File::create(&file_path).unwrap();
+        file.write_all(&contents).unwrap();
+    }
+    assert!(file_path.exists());
+
+    let new_path = dir_path.join("moved_dummy");
+    // There shouldn't be anything here yet
+    assert!(!new_path.exists());
+    move_file::move_file(&file_path, &new_path).unwrap();
+
+    // This file shouldn't exist anymore!
+    assert!(!file_path.exists());
+    // And this one should now exist
+    assert!(new_path.exists());
+
+    assert_eq!(contents, std::fs::read(new_path).unwrap());
+    // TODO: once that's implemented, assert that permission bits, accessed & modified times are equal in both
+}
+
 // TODO: this test is really ugly
 #[test]
-fn make_unique_file_name_1() {
+fn test_make_unique_file_name() {
     let dir = tempfile::tempdir().unwrap();
     let dir_path = dir.path();
 
