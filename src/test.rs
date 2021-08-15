@@ -10,7 +10,6 @@ use std::{
 use tempfile;
 
 use rand::{rngs::SmallRng, RngCore, SeedableRng};
-use ::time::{OffsetDateTime, format_description};
 
 use crate::{HOME_DIR, ffi, info_file, move_file, trash::{self, make_unique_file_name, Trash}};
 
@@ -96,17 +95,17 @@ fn rfc3339_formatting() {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("it seems that time went backwards!");
-    let timestamp = now.as_secs();
 
+    use chrono::Local;
 
-    // We'll use the time crate to make sure that
-    // our own formatting (done through libc's strftime)
-    let date_time = OffsetDateTime::from_unix_timestamp(timestamp as i64).unwrap();
+    // We'll use the chrono crate to make sure that
+    // our own formatting (done through libc's strftime) works
+    let date_time = Local::now();
+    
     // YYYY-MM-DDThh:mm:ss
-    let format = format_description::parse(
-        "[year]-[month]-[day]T[hour]:[minute]:[second]",
-    ).unwrap();
-    let rfc3339 = date_time.format(&format).unwrap();
+    let rfc3339 = date_time
+        .format("%Y-%m-%dT%T")
+        .to_string();
 
     assert_eq!(
         &rfc3339,
