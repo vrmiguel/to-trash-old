@@ -21,6 +21,8 @@ fn test_send_to_trash() {
     let dir_path = dir.path();
     let trash = Trash::new(dir_path);
     
+    dbg!(&trash);
+
     fs::create_dir(&trash.directory_sizes).unwrap();
     fs::create_dir(&trash.files).unwrap();
     fs::create_dir(&trash.info).unwrap();
@@ -29,14 +31,16 @@ fn test_send_to_trash() {
     let mut dummy = File::create(&*dummy_path).unwrap();
     dummy.write_all(&dummy_bytes()).unwrap();
 
-    trash::send_to_trash(dummy_path.as_os_str().to_os_string()).unwrap();
+    trash::send_to_trash(dummy_path.as_os_str().to_os_string(), &trash).unwrap();
 
-    drop(dir);
-    // assert!(!dummy_path.exists());
+    // This path should no longer exist!
+    assert!(!dummy_path.exists());
 
     // The file should now be in the trash
     let new_path = trash.files.join("dummy");
+    dbg!(&new_path);
 
+    // The new file (now in the trash) should now exist
     assert!(new_path.exists());
 }
 

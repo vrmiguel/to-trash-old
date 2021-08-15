@@ -27,7 +27,7 @@ lazy_static! {
 fn main() -> Result<()> {
     env::args_os()
         .skip(1)
-        .map(trash::send_to_trash)
+        .map(|file| trash::send_to_trash(file, &HOME_TRASH))
         .for_each(drop);
 
     Ok(())

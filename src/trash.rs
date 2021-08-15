@@ -4,6 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+#[derive(Debug)]
 pub struct Trash {
     pub files: PathBuf,
     pub directory_sizes: PathBuf,
@@ -21,7 +22,7 @@ impl Trash {
 }
 
 use crate::error::{Error, Result};
-use crate::{move_file::move_file, HOME_DIR, HOME_TRASH};
+use crate::{move_file::move_file};
 
 // Renames the file given by `path` until a path
 // not contained in `dir` is found.
@@ -69,7 +70,8 @@ fn _send_to_trash(path: &Path, trash: &Trash) -> Result<()> {
         let file_name = trash.files.join(file_name);
         move_file(path, Path::new(&*file_name))?;
     } else {
-        let new_path = trash.files.join(&path);
+        let new_path = trash.files.join(&file_name);
+        println!("Files: {}, path: {}, new-path: {}", trash.files.display(), path.display(), new_path.display());
         move_file(path, &new_path)?;
     }
 
@@ -77,15 +79,15 @@ fn _send_to_trash(path: &Path, trash: &Trash) -> Result<()> {
 }
 
 /// Sends a file to trash
-pub fn send_to_trash(to_be_removed: OsString) -> Result<()> {
+pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
     let path = fs::canonicalize(to_be_removed)?;
 
-    if path.starts_with(&*HOME_DIR) {
-        // TODO: check for preexisting file
-        _send_to_trash(path.as_ref(), &HOME_TRASH)?;
-    } else {
-        todo!("check for parent trash dir")
-    }
+    // if path.starts_with(&*HOME_DIR) {
+    //     // TODO: check for preexisting file
+    //     _send_to_trash(path.as_ref(), &HOME_TRASH)?;
+    // } else {
+    //     todo!("check for parent trash dir")
+    // }
 
-    Ok(())
+    _send_to_trash(&path, trash)
 }

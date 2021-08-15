@@ -17,11 +17,12 @@ fn clone_and_delete(from: &Path, to: &Path) -> Result<()> {
 }
 
 pub fn move_file(from: &Path, to: &Path) -> Result<()> {
-    if let Err(_) = fs::rename(from, to) {
+    // if let Err(_) = fs::rename(from, to) {
         // rename(2) failed, likely because the files are in different mount points
         // or are on separate filesystems.
+        dbg!(&from, &to);
         clone_and_delete(from, to)?;
-    }
+    // }
 
     Ok(())
 }
