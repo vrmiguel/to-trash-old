@@ -5,7 +5,7 @@ pub enum Error {
     #[error("IO: `{0}`")]
     Io(#[from] std::io::Error),
     #[error("Failed to obtain filename for {0}")]
-    FailedToObtainFileName(PathBuf)
+    FailedToObtainFileName(PathBuf),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
