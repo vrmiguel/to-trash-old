@@ -1,5 +1,5 @@
 mod home;
-mod time;
+mod time_fmt;
 
 pub use home::get_home_dir;
-pub use time::format_time;
+pub use time_fmt::format_time;

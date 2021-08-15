@@ -91,6 +91,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "itoa"
+version = "0.4.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd25036021b0de88a0aff6b850051563c6516d0bf53f8638938edbb9de732736"
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -280,6 +286,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "time"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1a776787d9c5d455bec3db044586ccdd8a9c74d5da5dc319fb80f3db08808fe6"
+dependencies = [
+ "itoa",
+ "libc",
+]
+
+[[package]]
 name = "tt"
 version = "0.1.0"
 dependencies = [
@@ -289,6 +305,7 @@ dependencies = [
  "rayon",
  "tempfile",
  "thiserror",
+ "time",
 ]
 
 [[package]]

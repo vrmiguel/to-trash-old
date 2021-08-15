@@ -4,17 +4,15 @@ use std::{
     fs::File,
     io::Write,
     path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use tempfile;
 
 use rand::{rngs::SmallRng, RngCore, SeedableRng};
+use ::time::{OffsetDateTime, format_description};
 
-use crate::{
-    info_file, move_file,
-    trash::{self, make_unique_file_name, Trash},
-    HOME_DIR,
-};
+use crate::{HOME_DIR, ffi, info_file, move_file, trash::{self, make_unique_file_name, Trash}};
 
 fn dummy_bytes() -> Vec<u8> {
     let mut rng = SmallRng::from_entropy();
@@ -91,6 +89,29 @@ fn test_move_file() {
 
     assert_eq!(contents, std::fs::read(new_path).unwrap());
     // TODO: once that's implemented, assert that permission bits, accessed & modified times are equal in both
+}
+
+#[test]
+fn rfc3339_formatting() {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("it seems that time went backwards!");
+    let timestamp = now.as_secs();
+
+
+    // We'll use the time crate to make sure that
+    // our own formatting (done through libc's strftime)
+    let date_time = OffsetDateTime::from_unix_timestamp(timestamp as i64).unwrap();
+    // YYYY-MM-DDThh:mm:ss
+    let format = format_description::parse(
+        "[year]-[month]-[day]T[hour]:[minute]:[second]",
+    ).unwrap();
+    let rfc3339 = date_time.format(&format).unwrap();
+
+    assert_eq!(
+        &rfc3339,
+        &ffi::format_time(now).unwrap()
+    );
 }
 
 // TODO: this test is really ugly
