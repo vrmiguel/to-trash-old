@@ -13,6 +13,8 @@ extern "C" {
         format: *const c_char,
         timeptr: *const tm,
     ) -> size_t;
+
+    pub fn tzset();
 }
 
 pub fn str_from_u8(buf: &[u8]) -> Result<&str> {
@@ -35,7 +37,8 @@ pub fn format_time(now: Duration) -> Result<String> {
     // TODO: it'd be better to call `time(NULL)` here
     let ltime = unsafe { time(&mut timestamp as *mut u64 as *mut i64) };
 
-    // TODO: call tzset before localtime_r ?
+    
+    unsafe { tzset() };
 
     // Safety: localtime_r is memory safe, threadsafe.
     unsafe { localtime_r(&ltime as *const i64, &mut new_time as *mut tm) };
@@ -45,7 +48,7 @@ pub fn format_time(now: Duration) -> Result<String> {
     // RFC3339 timestamp
     // Safety: this unwrap is safe since CString::new only fails when
     // the given string has an interior nul char.
-    let format = CString::new("%FT%T").unwrap();
+    let format = CString::new("%Y-%m-%dT%T").unwrap();
 
     unsafe {
         strftime(
