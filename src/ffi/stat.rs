@@ -63,6 +63,15 @@ mod tests {
     use super::Stat;
 
     #[test]
+    fn permissions() {
+        let file = NamedTempFile::new().unwrap();
+        let path = file.path();
+        let permissions = path.metadata().unwrap().permissions();
+
+        assert_eq!(permissions, Stat::lstat(path).unwrap().permissions());
+    }
+
+    #[test]
     fn time_of_last_modification() {
         let file = NamedTempFile::new().unwrap();
         let path = file.path();

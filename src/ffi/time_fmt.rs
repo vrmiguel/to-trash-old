@@ -62,3 +62,28 @@ pub fn format_time(now: Duration) -> Result<String> {
 
     Ok(str_from_u8(&char_buf)?.into())
 }
+
+#[cfg(test)]
+mod tests {
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    use chrono::Local;
+
+    use crate::ffi;
+    
+    #[test]
+    fn rfc3339_formatting() {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("it seems that time went backwards!");
+
+        // We'll use the chrono crate to make sure that
+        // our own formatting (done through libc's strftime) works
+        let date_time = Local::now();
+
+        // YYYY-MM-DDThh:mm:ss
+        let rfc3339 = date_time.format("%Y-%m-%dT%T").to_string();
+
+        assert_eq!(&rfc3339, &ffi::format_time(now).unwrap());
+    }
+}

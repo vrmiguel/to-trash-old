@@ -4,7 +4,6 @@ use std::{
     fs::File,
     io::Write,
     path::Path,
-    time::{SystemTime, UNIX_EPOCH},
 };
 
 use tempfile;
@@ -12,7 +11,6 @@ use tempfile;
 use rand::{rngs::SmallRng, RngCore, SeedableRng};
 
 use crate::{
-    ffi,
     trash::{self, make_unique_file_name, Trash},
     HOME_DIR,
 };
@@ -50,24 +48,6 @@ fn test_send_to_trash() {
 
     // The new file (now in the trash) should now exist
     assert!(new_path.exists());
-}
-
-#[test]
-fn rfc3339_formatting() {
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("it seems that time went backwards!");
-
-    use chrono::Local;
-
-    // We'll use the chrono crate to make sure that
-    // our own formatting (done through libc's strftime) works
-    let date_time = Local::now();
-
-    // YYYY-MM-DDThh:mm:ss
-    let rfc3339 = date_time.format("%Y-%m-%dT%T").to_string();
-
-    assert_eq!(&rfc3339, &ffi::format_time(now).unwrap());
 }
 
 // TODO: this test could look better
