@@ -17,7 +17,7 @@ use crate::{
     HOME_DIR,
 };
 
-fn dummy_bytes() -> Vec<u8> {
+pub fn dummy_bytes() -> Vec<u8> {
     let mut rng = SmallRng::from_entropy();
     let quantity = 1024 + rng.next_u32() % 1024;
     let mut vec = vec![0; quantity as usize];
@@ -93,34 +93,6 @@ fn test_send_to_trash() {
 
     // The new file (now in the trash) should now exist
     assert!(new_path.exists());
-}
-
-#[test]
-fn test_move_file() {
-    let dir = tempfile::tempdir().unwrap();
-    let dir_path = dir.path();
-
-    let contents = dummy_bytes();
-
-    let file_path = dir_path.join("dummy");
-    {
-        let mut file = File::create(&file_path).unwrap();
-        file.write_all(&contents).unwrap();
-    }
-    assert!(file_path.exists());
-
-    let new_path = dir_path.join("moved_dummy");
-    // There shouldn't be anything here yet
-    assert!(!new_path.exists());
-    move_file::move_file(&file_path, &new_path).unwrap();
-
-    // This file shouldn't exist anymore!
-    assert!(!file_path.exists());
-    // And this one should now exist
-    assert!(new_path.exists());
-
-    assert_eq!(contents, std::fs::read(new_path).unwrap());
-    // TODO: once that's implemented, assert that permission bits, accessed & modified times are equal in both
 }
 
 #[test]

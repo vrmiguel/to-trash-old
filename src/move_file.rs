@@ -25,3 +25,40 @@ pub fn move_file(from: &Path, to: &Path) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs::File;
+    use std::io::Write;
+    
+    use crate::move_file;
+    use crate::test::dummy_bytes;
+
+    #[test]
+    fn test_move_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let dir_path = dir.path();
+
+        let contents = dummy_bytes();
+
+        let file_path = dir_path.join("dummy");
+        {
+            let mut file = File::create(&file_path).unwrap();
+            file.write_all(&contents).unwrap();
+        }
+        assert!(file_path.exists());
+
+        let new_path = dir_path.join("moved_dummy");
+        // There shouldn't be anything here yet
+        assert!(!new_path.exists());
+        move_file::move_file(&file_path, &new_path).unwrap();
+
+        // This file shouldn't exist anymore!
+        assert!(!file_path.exists());
+        // And this one should now exist
+        assert!(new_path.exists());
+
+        assert_eq!(contents, std::fs::read(new_path).unwrap());
+        // TODO: once that's implemented, assert that permission bits, accessed & modified times are equal in both
+    }
+}
