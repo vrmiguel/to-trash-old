@@ -12,7 +12,7 @@ use tempfile;
 use rand::{rngs::SmallRng, RngCore, SeedableRng};
 
 use crate::{
-    ffi, info_file, move_file,
+    ffi, info_file,
     trash::{self, make_unique_file_name, Trash},
     HOME_DIR,
 };
@@ -23,49 +23,6 @@ pub fn dummy_bytes() -> Vec<u8> {
     let mut vec = vec![0; quantity as usize];
     rng.fill_bytes(&mut vec);
     vec
-}
-
-#[test]
-fn test_make_info_file_path() {
-    let trash_info = Path::new("/user/dummy/.local/share/Trash/info");
-    let file_name = OsStr::new("deleted-file");
-
-    assert_eq!(
-        info_file::make_info_file_path(file_name, trash_info),
-        PathBuf::from("/user/dummy/.local/share/Trash/info/deleted-file.trashinfo")
-    );
-}
-
-#[test]
-fn test_build_info_file() {
-    let dir = tempfile::tempdir_in(&*HOME_DIR).unwrap();
-    // let dir = tempfile::tempdir().unwrap();
-    let dir_path = dir.path();
-    let trash = Trash::new(dir_path);
-
-    fs::create_dir(&trash.info).unwrap();
-
-    let file_name = OsString::from("dummy");
-    let dummy_file_path = dir_path.join(&file_name);
-    let mut dummy = File::create(&dummy_file_path).unwrap();
-    dummy.write_all(&dummy_bytes()).unwrap();
-
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-
-    info_file::build_info_file(&dummy_file_path, &file_name, &trash, now).unwrap();
-
-    let info_file_path = trash.info.join("dummy.trashinfo");
-    let info_file = fs::read_to_string(&info_file_path).unwrap();
-
-    let rfc3339 = ffi::format_time(now).unwrap();
-
-    let info_file_should_be = format!(
-        "[Trash Info]\nPath={}\nDeletionDate={}\n",
-        dummy_file_path.display(),
-        rfc3339
-    );
-
-    assert_eq!(info_file, info_file_should_be)
 }
 
 #[test]
