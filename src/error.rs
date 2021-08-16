@@ -12,7 +12,7 @@ pub enum Error {
     Utf8(#[from] Utf8Error),
     #[error("Internal zero byte found during CString construction")]
     InternalNulByte(#[from] NulError),
-    
+
     // TODO: check errno when this happens and subdivide the errors
     #[error("stat failed")]
     StatError,

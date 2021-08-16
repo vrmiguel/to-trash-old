@@ -94,7 +94,7 @@ pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
 
     let origin_metadata = path.metadata()?;
     let modified = origin_metadata.modified()?;
-    let accessed = origin_metadata.modified()?;    
+    let accessed = origin_metadata.modified()?;
 
     // if path.starts_with(&*HOME_DIR) {
     //     // TODO: check for preexisting file
@@ -107,10 +107,10 @@ pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
         .duration_since(UNIX_EPOCH)
         .expect("it seems that time went backwards!");
 
-    // TODO: 
+    // TODO:
     // From the FreeDesktop Trash spec 1.0:
-    // 
-    //   When trashing a file or directory, the implementation 
+    //
+    //   When trashing a file or directory, the implementation
     //   MUST create the corresponding file in $trash/info first
 
     let file_name = _send_to_trash(&path, trash)?;
