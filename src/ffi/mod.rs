@@ -1,7 +1,7 @@
 mod home;
-mod stat;
+mod lstat;
 mod time_fmt;
 
 pub use home::get_home_dir;
-pub use stat::Stat;
+pub use lstat::Lstat;
 pub use time_fmt::format_time;

@@ -9,11 +9,11 @@ use libc::lstat;
 
 use crate::error::{Error, Result};
 
-pub struct Stat {
+pub struct Lstat {
     inner: libc::stat,
 }
 
-impl Stat {
+impl Lstat {
     pub fn lstat(path: &Path) -> Result<Self> {
         Ok(Self {
             inner: _lstat(path)?,
@@ -60,7 +60,7 @@ mod tests {
 
     use tempfile::NamedTempFile;
 
-    use super::Stat;
+    use super::Lstat;
 
     #[test]
     fn permissions() {
@@ -68,7 +68,7 @@ mod tests {
         let path = file.path();
         let permissions = path.metadata().unwrap().permissions();
 
-        assert_eq!(permissions, Stat::lstat(path).unwrap().permissions());
+        assert_eq!(permissions, Lstat::lstat(path).unwrap().permissions());
     }
 
     #[test]
@@ -84,7 +84,7 @@ mod tests {
             .unwrap()
             .as_secs();
 
-        let stat = Stat::lstat(path).unwrap();
+        let stat = Lstat::lstat(path).unwrap();
 
         assert_eq!(mod_timestamp, stat.modified());
     }

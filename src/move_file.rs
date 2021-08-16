@@ -31,7 +31,7 @@ mod tests {
     use std::fs::File;
     use std::io::Write;
 
-    use crate::ffi::Stat;
+    use crate::ffi::Lstat;
     use crate::move_file;
     use crate::test::dummy_bytes;
 
@@ -49,7 +49,7 @@ mod tests {
         }
         assert!(file_path.exists());
 
-        let prev_stat = Stat::lstat(&file_path).unwrap();
+        let prev_stat = Lstat::lstat(&file_path).unwrap();
 
         let new_path = dir_path.join("moved_dummy");
         // There shouldn't be anything here yet
@@ -61,7 +61,7 @@ mod tests {
         // And this one should now exist
         assert!(new_path.exists());
 
-        let new_stat = Stat::lstat(&new_path).unwrap();
+        let new_stat = Lstat::lstat(&new_path).unwrap();
 
         assert_eq!(contents, std::fs::read(new_path).unwrap());
 
@@ -87,7 +87,7 @@ mod tests {
         }
         assert!(file_path.exists());
 
-        let prev_stat = Stat::lstat(&file_path).unwrap();
+        let prev_stat = Lstat::lstat(&file_path).unwrap();
 
         let new_path = dir_path.join("moved_dummy");
         // There shouldn't be anything here yet
@@ -99,7 +99,7 @@ mod tests {
         // And this one should now exist
         assert!(new_path.exists());
 
-        let new_stat = Stat::lstat(&new_path).unwrap();
+        let new_stat = Lstat::lstat(&new_path).unwrap();
 
         assert_eq!(contents, std::fs::read(new_path).unwrap());
 
