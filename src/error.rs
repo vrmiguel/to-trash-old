@@ -1,4 +1,4 @@
-use std::{path::PathBuf, str::Utf8Error};
+use std::{ffi::NulError, path::PathBuf, str::Utf8Error};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -10,6 +10,12 @@ pub enum Error {
     StringFromBytesError,
     #[error("UTF8 error: {0}")]
     Utf8(#[from] Utf8Error),
+    #[error("Internal zero byte found during CString construction")]
+    InternalNulByte(#[from] NulError),
+    
+    // TODO: check errno when this happens and subdivide the errors
+    #[error("stat failed")]
+    StatError,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
