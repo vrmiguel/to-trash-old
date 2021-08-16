@@ -1,10 +1,4 @@
-use std::{
-    ffi::OsString,
-    fs,
-    fs::File,
-    io::Write,
-    path::Path,
-};
+use std::{ffi::OsString, fs, fs::File, io::Write, path::Path};
 
 use tempfile;
 

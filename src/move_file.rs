@@ -31,8 +31,8 @@ mod tests {
     use std::fs::File;
     use std::io::Write;
 
-    use crate::move_file;
     use crate::ffi::Stat;
+    use crate::move_file;
     use crate::test::dummy_bytes;
 
     #[test]
@@ -64,21 +64,12 @@ mod tests {
         let new_stat = Stat::lstat(&new_path).unwrap();
 
         assert_eq!(contents, std::fs::read(new_path).unwrap());
-        
+
         // Make sure that permission bits, accessed & modified times were maintained
-        assert_eq!(
-            prev_stat.permissions(),
-            new_stat.permissions()
-        );
+        assert_eq!(prev_stat.permissions(), new_stat.permissions());
 
-        assert_eq!(
-            prev_stat.modified(),
-            new_stat.modified()
-        );
+        assert_eq!(prev_stat.modified(), new_stat.modified());
 
-        assert_eq!(
-            prev_stat.accessed(),
-            new_stat.accessed()
-        );
+        assert_eq!(prev_stat.accessed(), new_stat.accessed());
     }
 }

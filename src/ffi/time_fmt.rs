@@ -70,7 +70,7 @@ mod tests {
     use chrono::Local;
 
     use crate::ffi;
-    
+
     #[test]
     fn rfc3339_formatting() {
         let now = SystemTime::now()
