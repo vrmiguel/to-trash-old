@@ -21,6 +21,10 @@ impl Stat {
     pub fn blocks(&self) -> i64 {
         self.inner.st_blocks
     }
+
+    pub fn modified(&self) -> u64 {
+        self.inner.st_mtime as u64
+    }
 }
 
 fn _lstat(path: &Path) -> Result<libc::stat> {
@@ -33,5 +37,32 @@ fn _lstat(path: &Path) -> Result<libc::stat> {
         Err(Error::StatError)
     } else {
         Ok(stat_buf)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::UNIX_EPOCH;
+
+    use tempfile::NamedTempFile;
+
+    use super::Stat;
+
+    #[test]
+    fn time_of_last_modification() {
+        let file = NamedTempFile::new().unwrap();
+        let path = file.path();
+        let mod_timestamp = path
+            .metadata()
+            .unwrap()
+            .modified()
+            .unwrap()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        let stat = Stat::lstat(path).unwrap();
+
+        assert_eq!(mod_timestamp, stat.modified());
     }
 }

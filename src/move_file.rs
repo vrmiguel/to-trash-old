@@ -30,7 +30,7 @@ pub fn move_file(from: &Path, to: &Path) -> Result<()> {
 mod tests {
     use std::fs::File;
     use std::io::Write;
-    
+
     use crate::move_file;
     use crate::test::dummy_bytes;
 
