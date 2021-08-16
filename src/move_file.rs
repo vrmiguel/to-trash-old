@@ -32,6 +32,7 @@ mod tests {
     use std::io::Write;
 
     use crate::move_file;
+    use crate::ffi::Stat;
     use crate::test::dummy_bytes;
 
     #[test]
@@ -48,6 +49,8 @@ mod tests {
         }
         assert!(file_path.exists());
 
+        let prev_stat = Stat::lstat(&file_path).unwrap();
+
         let new_path = dir_path.join("moved_dummy");
         // There shouldn't be anything here yet
         assert!(!new_path.exists());
@@ -58,7 +61,24 @@ mod tests {
         // And this one should now exist
         assert!(new_path.exists());
 
+        let new_stat = Stat::lstat(&new_path).unwrap();
+
         assert_eq!(contents, std::fs::read(new_path).unwrap());
-        // TODO: once that's implemented, assert that permission bits, accessed & modified times are equal in both
+        
+        // Make sure that permission bits, accessed & modified times were maintained
+        assert_eq!(
+            prev_stat.permissions(),
+            new_stat.permissions()
+        );
+
+        assert_eq!(
+            prev_stat.modified(),
+            new_stat.modified()
+        );
+
+        assert_eq!(
+            prev_stat.accessed(),
+            new_stat.accessed()
+        );
     }
 }
