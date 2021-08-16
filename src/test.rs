@@ -1,9 +1,9 @@
 use std::{
-    ffi::{OsStr, OsString},
+    ffi::OsString,
     fs,
     fs::File,
     io::Write,
-    path::{Path, PathBuf},
+    path::Path,
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -12,7 +12,7 @@ use tempfile;
 use rand::{rngs::SmallRng, RngCore, SeedableRng};
 
 use crate::{
-    ffi, info_file,
+    ffi,
     trash::{self, make_unique_file_name, Trash},
     HOME_DIR,
 };

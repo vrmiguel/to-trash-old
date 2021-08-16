@@ -92,9 +92,9 @@ fn _send_to_trash(path: &Path, trash: &Trash) -> Result<OsString> {
 pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
     let path = fs::canonicalize(to_be_removed)?;
 
-    let origin_metadata = path.metadata()?;
-    let modified = origin_metadata.modified()?;
-    let accessed = origin_metadata.modified()?;
+    // let origin_metadata = path.metadata()?;
+    // let modified = origin_metadata.modified()?;
+    // let accessed = origin_metadata.modified()?;
 
     // if path.starts_with(&*HOME_DIR) {
     //     // TODO: check for preexisting file
@@ -118,7 +118,7 @@ pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
     info_file::build_info_file(&path, &file_name, &trash, now)?;
 
     if path.is_dir() {
-        // Update directorysizes
+        // TODO: Update directorysizes
     }
 
     Ok(())

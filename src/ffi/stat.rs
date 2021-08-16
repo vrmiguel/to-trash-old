@@ -1,6 +1,8 @@
 use std::ffi::CString;
+use std::fs::Permissions;
 use std::mem;
 use std::os::unix::ffi::OsStrExt;
+use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
 use libc::lstat;
@@ -18,8 +20,20 @@ impl Stat {
         })
     }
 
+    pub fn mode(&self) -> u32 {
+        self.inner.st_mode
+    }
+
+    pub fn permissions(&self) -> Permissions {
+        Permissions::from_mode(self.mode())
+    }
+
     pub fn blocks(&self) -> i64 {
         self.inner.st_blocks
+    }
+
+    pub fn accessed(&self) -> u64 {
+        self.inner.st_atime as u64
     }
 
     pub fn modified(&self) -> u64 {
