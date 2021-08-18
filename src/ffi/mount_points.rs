@@ -1,12 +1,10 @@
 use std::{
-    ffi::{CStr, CString, OsStr},
-    mem,
+    ffi::{CStr, CString, OsStr},    
     os::unix::prelude::OsStrExt,
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
-use libc::{getmntent, getpid, setmntent, statfs, PROC_SUPER_MAGIC};
-
+use libc::{getmntent, setmntent};
 use crate::error::{Error, Result};
 
 #[derive(Debug)]
@@ -15,35 +13,10 @@ pub struct MountPoint {
     pub fs_path_prefix: PathBuf,
 }
 
-pub fn proc_is_mounted() -> bool {
-    if !Path::new("/proc/").exists() {
-        // We found no /proc/ folder
-        return false;
-    }
-
-    let mut statf: libc::statfs = unsafe { mem::zeroed() };
-    // Safety: safe unwrap, no interior NUL byte in "/proc/"
-    let proc = CString::new("/proc/").unwrap();
-    let ret_val = unsafe { statfs(proc.as_ptr(), &mut statf as *mut _) };
-
-    match ret_val {
-        -1 => {
-            // statfs failed!
-            // TODO: check errno
-            false
-        }
-        0 => {
-            // statfs worked :)
-            statf.f_type == PROC_SUPER_MAGIC
-        }
-        _ => unreachable!("unexpected return from statfs"),
-    }
-}
-
 pub fn probe_mount_points() -> Result<Vec<MountPoint>> {
     let mut mount_points = vec![];
 
-    let path = CString::new("/etc/mtab").unwrap();
+    let path = CString::new("/proc/mounts").unwrap();
 
     let read_arg = CString::new("r")?;
     let file = unsafe { setmntent(path.as_ptr(), read_arg.as_ptr()) };
