@@ -12,6 +12,8 @@ pub enum Error {
     Utf8(#[from] Utf8Error),
     #[error("Internal zero byte found during CString construction")]
     InternalNulByte(#[from] NulError),
+    #[error("Failed to obtain mount points")]
+    FailedToObtainMountPoints,
 
     // TODO: check errno when this happens and subdivide the errors
     #[error("stat failed")]

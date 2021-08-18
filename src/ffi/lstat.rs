@@ -13,6 +13,7 @@ pub struct Lstat {
     inner: libc::stat,
 }
 
+#[allow(dead_code)]
 impl Lstat {
     pub fn lstat(path: &Path) -> Result<Self> {
         Ok(Self {
