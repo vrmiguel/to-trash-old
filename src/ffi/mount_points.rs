@@ -1,4 +1,6 @@
 use std::{
+    cmp::Reverse,
+    collections::BinaryHeap,
     ffi::{CStr, CString, OsStr},
     os::unix::prelude::OsStrExt,
     path::PathBuf,
@@ -7,7 +9,7 @@ use std::{
 use crate::error::{Error, Result};
 use libc::{getmntent, setmntent};
 
-#[derive(Debug, PartialEq, Eq, Ord)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct MountPoint {
     pub fs_name: String,
     pub fs_path_prefix: PathBuf,
@@ -15,17 +17,21 @@ pub struct MountPoint {
 
 impl PartialOrd for MountPoint {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(
-            self.fs_path_prefix
-                .as_os_str()
-                .len()
-                .cmp(&other.fs_path_prefix.as_os_str().len()),
-        )
+        Some(self.cmp(&other))
+    }
+}
+
+impl Ord for MountPoint {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.fs_path_prefix
+            .as_os_str()
+            .len()
+            .cmp(&other.fs_path_prefix.as_os_str().len())
     }
 }
 
 pub fn probe_mount_points() -> Result<Vec<MountPoint>> {
-    let mut mount_points = vec![];
+    let mut mount_points = BinaryHeap::new();
 
     let path = CString::new("/proc/mounts").unwrap();
 
@@ -58,14 +64,20 @@ pub fn probe_mount_points() -> Result<Vec<MountPoint>> {
             fs_name: fs_name_str.into(),
             fs_path_prefix: fs_dir_path,
         };
-        mount_points.push(mount_point);
+        mount_points.push(Reverse(mount_point));
     }
 
-    Ok(mount_points)
+    Ok(mount_points
+        .into_sorted_vec()
+        .into_iter()
+        .map(|rev_mount_point| rev_mount_point.0)
+        .collect())
 }
 
 #[cfg(test)]
 mod tests {
+    use std::cmp::Reverse;
+
     use super::MountPoint;
 
     #[test]
@@ -81,6 +93,8 @@ mod tests {
         };
 
         assert!(first < second);
+
+        assert!(Reverse(first) > Reverse(second))
     }
 
     #[test]
