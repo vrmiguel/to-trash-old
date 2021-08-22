@@ -1,16 +1,27 @@
 use std::{
-    ffi::{CStr, CString, OsStr},    
+    ffi::{CStr, CString, OsStr},
     os::unix::prelude::OsStrExt,
     path::PathBuf,
 };
 
-use libc::{getmntent, setmntent};
 use crate::error::{Error, Result};
+use libc::{getmntent, setmntent};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Ord)]
 pub struct MountPoint {
     pub fs_name: String,
     pub fs_path_prefix: PathBuf,
+}
+
+impl PartialOrd for MountPoint {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(
+            self.fs_path_prefix
+                .as_os_str()
+                .len()
+                .cmp(&other.fs_path_prefix.as_os_str().len()),
+        )
+    }
 }
 
 pub fn probe_mount_points() -> Result<Vec<MountPoint>> {
@@ -51,4 +62,66 @@ pub fn probe_mount_points() -> Result<Vec<MountPoint>> {
     }
 
     Ok(mount_points)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::MountPoint;
+
+    #[test]
+    fn mount_point_cmp() {
+        let first = MountPoint {
+            fs_name: "portal".into(),
+            fs_path_prefix: "/run/user/1000".into(),
+        };
+
+        let second = MountPoint {
+            fs_name: "portal".into(),
+            fs_path_prefix: "/run/user/1001/doc".into(),
+        };
+
+        assert!(first < second);
+    }
+
+    #[test]
+    fn mount_point_neq() {
+        // 1st case: same `fs_name` but differing prefix
+        let first = MountPoint {
+            fs_name: "portal".into(),
+            fs_path_prefix: "/run/user/1000/doc".into(),
+        };
+
+        let second = MountPoint {
+            fs_name: "portal".into(),
+            fs_path_prefix: "/run/user/1001/doc".into(),
+        };
+
+        assert!(first != second);
+
+        // 2nd case: differing `fs_name` but same prefix
+        let first = MountPoint {
+            fs_name: "portal2".into(),
+            fs_path_prefix: "/run/user/1000/doc".into(),
+        };
+
+        let second = MountPoint {
+            fs_name: "portal".into(),
+            fs_path_prefix: "/run/user/1000/doc".into(),
+        };
+
+        assert!(first != second);
+
+        // 3rd case: both properties differ
+        let first = MountPoint {
+            fs_name: "portal2".into(),
+            fs_path_prefix: "/run/user/1000/doc".into(),
+        };
+
+        let second = MountPoint {
+            fs_name: "portal".into(),
+            fs_path_prefix: "/run/user/1001/doc".into(),
+        };
+
+        assert!(first != second);
+    }
 }
