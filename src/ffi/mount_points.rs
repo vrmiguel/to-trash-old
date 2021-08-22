@@ -138,4 +138,18 @@ mod tests {
 
         assert!(first != second);
     }
+
+    #[test]
+    fn probing_returns_ordered_mount_points() {
+        let mount_points = super::probe_mount_points().unwrap();
+
+        if mount_points.len() < 2 {
+            // We didn't get enough data in order to test this :C
+            //
+            // TODO: check if it's possible to mock `probe_mount_points`.
+            return;
+        }
+
+        assert!(mount_points.windows(2).all(|w| w[0] >= w[1]));
+    }
 }
