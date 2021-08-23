@@ -33,7 +33,7 @@ impl Ord for MountPoint {
 pub fn probe_mount_points() -> Result<Vec<MountPoint>> {
     let mut mount_points = BinaryHeap::new();
 
-    let path = CString::new("/proc/mounts").unwrap();
+    let path = CString::new("/etc/mtab").unwrap();
 
     let read_arg = CString::new("r")?;
     let file = unsafe { setmntent(path.as_ptr(), read_arg.as_ptr()) };
