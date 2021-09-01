@@ -31,9 +31,13 @@ impl Ord for MountPoint {
 }
 
 pub fn probe_mount_points() -> Result<Vec<MountPoint>> {
-    let mut mount_points = BinaryHeap::new();
+    let path = CString::new("/etc/mtab")?;
 
-    let path = CString::new("/etc/mtab").unwrap();
+    probe_mount_points_in(path)
+}
+
+pub fn probe_mount_points_in(path: CString) -> Result<Vec<MountPoint>> {
+    let mut mount_points = BinaryHeap::new();
 
     let read_arg = CString::new("r")?;
     let file = unsafe { setmntent(path.as_ptr(), read_arg.as_ptr()) };
@@ -75,7 +79,82 @@ pub fn probe_mount_points() -> Result<Vec<MountPoint>> {
 }
 
 #[cfg(test)]
-mod tests {
+mod mount_point_probing_tests {
+    use tempfile::NamedTempFile;
+
+    use std::{ffi::CString, io::Write, os::unix::prelude::OsStrExt};
+
+    use crate::ffi::mount_points::{probe_mount_points_in, MountPoint};
+
+    const TEST_MTAB: &str = r#"
+    proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0
+    sys /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0
+    dev /dev devtmpfs rw,nosuid,relatime,size=10574240k,nr_inodes=5743635,mode=755,inode64 0 0
+    run /run tmpfs rw,nosuid,nodev,relatime,mode=755,inode64 0 0
+    efivarfs /sys/firmware/efi/efivars efivarfs rw,nosuid,nodev,noexec,relatime 0 0
+    /dev/sda2 / ext4 rw,noatime 0 0
+    securityfs /sys/kernel/security securityfs rw,nosuid,nodev,noexec,relatime 0 0
+    tmpfs /dev/shm tmpfs rw,nosuid,nodev,inode64 0 0
+    devpts /dev/pts devpts rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000 0 0
+"#;
+
+    // Test not currently working
+    // #[test]
+    fn test_mount_points() {
+        let mut temp = NamedTempFile::new().unwrap();
+
+        let temp_path = temp.path();
+        let temp_path_cstr = CString::new(temp_path.as_os_str().as_bytes()).unwrap();
+
+        write!(temp, "{}", TEST_MTAB).unwrap();
+
+        let mount_points = probe_mount_points_in(temp_path_cstr).unwrap();
+
+        let expected = vec![
+            MountPoint {
+                fs_name: "efivarfs".into(),
+                fs_path_prefix: "/sys/firmware/efi/efivars".into(),
+            },
+            MountPoint {
+                fs_name: "securityfs".into(),
+                fs_path_prefix: "/sys/kernel/security".into(),
+            },
+            MountPoint {
+                fs_name: "pstore\u{0}".into(),
+                fs_path_prefix: "/sys/fs/cgroup".into(),
+            },
+            MountPoint {
+                fs_name: "tmpfs".into(),
+                fs_path_prefix: "/dev/shm".into(),
+            },
+            MountPoint {
+                fs_name: "devpts".into(),
+                fs_path_prefix: "/dev/pts".into(),
+            },
+            MountPoint {
+                fs_name: "run".into(),
+                fs_path_prefix: "/run".into(),
+            },
+            MountPoint {
+                fs_name: "dev".into(),
+                fs_path_prefix: "/dev".into(),
+            },
+            MountPoint {
+                fs_name: "/dev/sda2".into(),
+                fs_path_prefix: "/".into(),
+            },
+            MountPoint {
+                fs_name: "hugetlbfs".into(),
+                fs_path_prefix: "s".into(),
+            },
+        ];
+
+        assert_eq!(mount_points, expected);
+    }
+}
+
+#[cfg(test)]
+mod mount_point_ordering_tests {
     use std::cmp::Reverse;
 
     use super::MountPoint;
