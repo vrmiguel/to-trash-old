@@ -49,7 +49,7 @@ fn _lstat(path: &Path) -> Result<libc::stat> {
 
     if -1 == unsafe { lstat(c_path.as_ptr(), &mut stat_buf) } {
         // TODO: check errno
-        Err(Error::StatError)
+        Err(Error::Stat)
     } else {
         Ok(stat_buf)
     }

@@ -23,7 +23,7 @@ lazy_static! {
 }
 
 fn main() -> Result<()> {
-    dbg!(ffi::probe_mount_points());
+    let _ = dbg!(ffi::probe_mount_points());
     env::args_os()
         .skip(1)
         .map(|file| trash::send_to_trash(file, &HOME_TRASH))

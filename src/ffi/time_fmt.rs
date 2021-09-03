@@ -22,7 +22,7 @@ pub fn str_from_u8(buf: &[u8]) -> Result<&str> {
 
     let bytes = buf
         .get(0..first_nul_idx)
-        .ok_or(Error::StringFromBytesError)?;
+        .ok_or(Error::StringFromBytes)?;
 
     Ok(str::from_utf8(bytes)?)
 }

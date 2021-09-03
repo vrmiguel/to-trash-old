@@ -7,7 +7,7 @@ pub enum Error {
     #[error("Failed to obtain filename for {0}")]
     FailedToObtainFileName(PathBuf),
     #[error("Failed to convert bytes into a String")]
-    StringFromBytesError,
+    StringFromBytes,
     #[error("UTF8 error: {0}")]
     Utf8(#[from] Utf8Error),
     #[error("Internal zero byte found during CString construction")]
@@ -19,7 +19,7 @@ pub enum Error {
 
     // TODO: check errno when this happens and subdivide the errors
     #[error("stat failed")]
-    StatError,
+    Stat,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

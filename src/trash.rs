@@ -1,6 +1,6 @@
 use std::{
     ffi::OsString,
-    fs, io,
+    fs,
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -30,14 +30,13 @@ impl Trash {
     }
 }
 
-// Renames the file given by `path` until a path
-// not contained in `dir` is found.
-//
-// Example: if `foo` exists in `dir`, then this function returns `foo-1`
-//          if `foo` and `foo-1` exist in `dir`, then this function returns `foo-2`
-// Note: assumes that `path` exists in `dir`!
+/// Renames the file given by `path` until a path
+/// not contained in `dir` is found.
+///
+/// Example: if `foo` exists in `dir`, then this function returns `foo-1`
+///          if `foo` and `foo-1` exist in `dir`, then this function returns `foo-2`
+/// Note: assumes that `path` exists in `dir`!
 pub fn make_unique_file_name(path: &Path, dir: &Path) -> OsString {
-    // let mut file_name = OsString::from(path);
     let file_name = path.as_os_str();
 
     for i in 1_u64.. {
@@ -55,7 +54,7 @@ pub fn make_unique_file_name(path: &Path, dir: &Path) -> OsString {
 
 /// Sends the file given by `path` to the given trash structure
 fn _send_to_trash(path: &Path, trash: &Trash) -> Result<OsString> {
-    // TODO: this could be in a separate function
+    // TODO: this should be in a separate function
     let file_name = if !path.ends_with("..") || path != Path::new(".") {
         path.file_name().unwrap().to_owned()
     } else {
@@ -71,7 +70,7 @@ fn _send_to_trash(path: &Path, trash: &Trash) -> Result<OsString> {
         // According to the trash-spec 1.0 states that, a file in the trash
         // must not be overwritten by a newer file with the same filename.
         // For this reason, we'll make a new unique filename for the file we're deleting.
-        let new_file_name = make_unique_file_name(&Path::new(&file_name), &*trash.files);
+        let new_file_name = make_unique_file_name(Path::new(&file_name), &*trash.files);
         let file_path = trash.files.join(&new_file_name);
         move_file(path, &*file_path)?;
 
@@ -117,15 +116,17 @@ pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
 
     let file_name = _send_to_trash(&path, trash)?;
 
-    info_file::build_info_file(&path, &file_name, &trash, now)?;
+    info_file::build_info_file(&path, &file_name, trash, now)?;
 
     if path.is_dir() {
         // TODO: Update directorysizes
+        let _dir_size = directory_size(&path)?;
     }
 
     Ok(())
 }
 
+// TODO: add a test for this
 pub fn directory_size(path: impl AsRef<Path>) -> Result<u64> {
     let path = path.as_ref();
 
@@ -133,15 +134,12 @@ pub fn directory_size(path: impl AsRef<Path>) -> Result<u64> {
         return Err(Error::NotADirectory(path.to_owned()));
     }
 
-    let mut sum = 0_u64;
+    let dir_size_in_blocks = WalkDir::new(path)
+        .into_iter()
+        .flatten()
+        .filter_map(|e| Lstat::lstat(&e.path()).ok())
+        .map(|file| file.blocks() as u64)
+        .sum();
 
-    let entries = WalkDir::new(path).into_iter().flatten();
-
-    for entry in entries {
-        let path = entry.path();
-        let size_in_blocks = Lstat::lstat(path)?.blocks() as u64;
-        sum += size_in_blocks;
-    }
-
-    Ok(sum)
+    Ok(dir_size_in_blocks)
 }
