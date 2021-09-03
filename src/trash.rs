@@ -59,8 +59,9 @@ pub fn make_unique_file_name(path: &Path, dir: &Path) -> OsString {
 /// In case of success, returns the name of the trashed file
 /// exactly as sent to `TRASH/files`.
 fn _send_to_trash(path: &Path, trash: &Trash, deletion_date: Duration) -> Result<OsString> {
-    // Note: this only works properly assuming that the given
-    //       path is canonicalized!
+    // The path we receive should always be canonicalized
+    debug_assert!(fs::canonicalize(path).unwrap() == path);
+
     let file_name = path
         .file_name()
         .ok_or_else(|| Error::FailedToObtainFileName(path.into()))?;
@@ -77,10 +78,11 @@ fn _send_to_trash(path: &Path, trash: &Trash, deletion_date: Duration) -> Result
 
     // Where the file will be sent to once trashed
     let file_in_trash = trash.files.join(&file_name);
+
+    // According to the trash-spec 1.0 states that, a file in the trash
+    // must not be overwritten by a newer file with the same filename.
+    // For this reason, we'll make a new unique filename for the file we're deleting.
     if file_in_trash.exists() {
-        // According to the trash-spec 1.0 states that, a file in the trash
-        // must not be overwritten by a newer file with the same filename.
-        // For this reason, we'll make a new unique filename for the file we're deleting.
         let new_file_name = make_unique_file_name(file_name.as_ref(), &*trash.files);
         let file_path = trash.files.join(&new_file_name);
         info_file::build_info_file(path, &new_file_name, trash, deletion_date)?;
@@ -106,17 +108,6 @@ fn _send_to_trash(path: &Path, trash: &Trash, deletion_date: Duration) -> Result
 /// Sends a file to trash
 pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
     let path = fs::canonicalize(&to_be_removed)?;
-
-    // let origin_metadata = path.metadata()?;
-    // let modified = origin_metadata.modified()?;
-    // let accessed = origin_metadata.modified()?;
-
-    // if path.starts_with(&*HOME_DIR) {
-    //     // TODO: check for preexisting file
-    //     _send_to_trash(path.as_ref(), &HOME_TRASH)?;
-    // } else {
-    //     todo!("check for parent trash dir")
-    // }
 
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
