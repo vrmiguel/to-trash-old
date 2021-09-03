@@ -53,18 +53,15 @@ pub fn make_unique_file_name(path: &Path, dir: &Path) -> OsString {
 }
 
 /// Sends the file given by `path` to the given trash structure
+/// Assumes that `path` is canonicalized.
 fn _send_to_trash(path: &Path, trash: &Trash) -> Result<OsString> {
-    // TODO: this should be in a separate function
-    let file_name = if !path.ends_with("..") || path != Path::new(".") {
-        path.file_name().unwrap().to_owned()
-    } else {
-        let canonicalized = fs::canonicalize(&path)?;
-        match canonicalized.file_name() {
-            Some(canon_path) => canon_path.to_owned(),
-            None => return Err(Error::FailedToObtainFileName(path.into())),
-        }
-    };
+    // Note: this only works properly assuming that the given
+    //       path is canonicalized!
+    let file_name = path
+        .file_name()
+        .ok_or(Error::FailedToObtainFileName(path.into()))?;
 
+    // Where the file will be sent to once trashed
     let file_in_trash = trash.files.join(&file_name);
     if file_in_trash.exists() {
         // According to the trash-spec 1.0 states that, a file in the trash
@@ -85,7 +82,7 @@ fn _send_to_trash(path: &Path, trash: &Trash) -> Result<OsString> {
         );
         move_file(path, &new_path)?;
 
-        Ok(file_name)
+        Ok(file_name.into())
     }
 }
 
@@ -120,6 +117,7 @@ pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
 
     if path.is_dir() {
         // TODO: Update directorysizes
+        // update_directory_size_cache()
         let _dir_size = directory_size(&path)?;
     }
 

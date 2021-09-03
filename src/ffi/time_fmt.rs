@@ -20,9 +20,7 @@ extern "C" {
 pub fn str_from_u8(buf: &[u8]) -> Result<&str> {
     let first_nul_idx = buf.iter().position(|&c| c == b'\0').unwrap_or(buf.len());
 
-    let bytes = buf
-        .get(0..first_nul_idx)
-        .ok_or(Error::StringFromBytes)?;
+    let bytes = buf.get(0..first_nul_idx).ok_or(Error::StringFromBytes)?;
 
     Ok(str::from_utf8(bytes)?)
 }
