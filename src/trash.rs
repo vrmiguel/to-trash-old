@@ -11,6 +11,7 @@ use crate::{
 };
 use crate::{ffi::Lstat, move_file::move_file};
 
+use std::time::Duration;
 use walkdir::WalkDir;
 
 #[derive(Debug)]
@@ -54,7 +55,10 @@ pub fn make_unique_file_name(path: &Path, dir: &Path) -> OsString {
 
 /// Sends the file given by `path` to the given trash structure
 /// Assumes that `path` is canonicalized.
-fn _send_to_trash(path: &Path, trash: &Trash) -> Result<OsString> {
+///
+/// In case of success, returns the name of the trashed file
+/// exactly as sent to `TRASH/files`.
+fn _send_to_trash(path: &Path, trash: &Trash, deletion_date: Duration) -> Result<OsString> {
     // Note: this only works properly assuming that the given
     //       path is canonicalized!
     let file_name = path
@@ -67,28 +71,31 @@ fn _send_to_trash(path: &Path, trash: &Trash) -> Result<OsString> {
         // According to the trash-spec 1.0 states that, a file in the trash
         // must not be overwritten by a newer file with the same filename.
         // For this reason, we'll make a new unique filename for the file we're deleting.
-        let new_file_name = make_unique_file_name(Path::new(&file_name), &*trash.files);
+        let new_file_name = make_unique_file_name(file_name.as_ref(), &*trash.files);
         let file_path = trash.files.join(&new_file_name);
+        info_file::build_info_file(&path, &new_file_name, trash, deletion_date)?;
+
         move_file(path, &*file_path)?;
 
-        Ok(new_file_name)
-    } else {
-        let new_path = trash.files.join(&file_name);
-        println!(
-            "Files: {}, path: {}, new-path: {}",
-            trash.files.display(),
-            path.display(),
-            new_path.display()
-        );
-        move_file(path, &new_path)?;
-
-        Ok(file_name.into())
+        return Ok(new_file_name);
     }
+
+    println!(
+        "Files: {}, path: {}, new-path: {}",
+        trash.files.display(),
+        path.display(),
+        file_in_trash.display()
+    );
+
+    info_file::build_info_file(&path, &file_name, trash, deletion_date)?;
+    move_file(path, &file_in_trash)?;
+
+    Ok(file_name.into())
 }
 
 /// Sends a file to trash
 pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
-    let path = fs::canonicalize(to_be_removed)?;
+    let path = fs::canonicalize(&to_be_removed)?;
 
     // let origin_metadata = path.metadata()?;
     // let modified = origin_metadata.modified()?;
@@ -108,12 +115,12 @@ pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
     // TODO:
     // From the FreeDesktop Trash spec 1.0:
     //
+    //```
     //   When trashing a file or directory, the implementation
     //   MUST create the corresponding file in $trash/info first
+    //```
 
-    let file_name = _send_to_trash(&path, trash)?;
-
-    info_file::build_info_file(&path, &file_name, trash, now)?;
+    let _file_name = _send_to_trash(&path, trash, now)?;
 
     if path.is_dir() {
         // TODO: Update directorysizes
