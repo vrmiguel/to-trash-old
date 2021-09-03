@@ -63,7 +63,17 @@ fn _send_to_trash(path: &Path, trash: &Trash, deletion_date: Duration) -> Result
     //       path is canonicalized!
     let file_name = path
         .file_name()
-        .ok_or(Error::FailedToObtainFileName(path.into()))?;
+        .ok_or_else(|| Error::FailedToObtainFileName(path.into()))?;
+
+    // Note:
+    //
+    // From the FreeDesktop Trash spec 1.0:
+    //
+    //```
+    //   When trashing a file or directory, the implementation
+    //   MUST create the corresponding file in $trash/info first
+    //```
+    // Our implementation respects this by calling `build_info_file` before `move_file`
 
     // Where the file will be sent to once trashed
     let file_in_trash = trash.files.join(&file_name);
@@ -73,7 +83,7 @@ fn _send_to_trash(path: &Path, trash: &Trash, deletion_date: Duration) -> Result
         // For this reason, we'll make a new unique filename for the file we're deleting.
         let new_file_name = make_unique_file_name(file_name.as_ref(), &*trash.files);
         let file_path = trash.files.join(&new_file_name);
-        info_file::build_info_file(&path, &new_file_name, trash, deletion_date)?;
+        info_file::build_info_file(path, &new_file_name, trash, deletion_date)?;
 
         move_file(path, &*file_path)?;
 
@@ -87,7 +97,7 @@ fn _send_to_trash(path: &Path, trash: &Trash, deletion_date: Duration) -> Result
         file_in_trash.display()
     );
 
-    info_file::build_info_file(&path, &file_name, trash, deletion_date)?;
+    info_file::build_info_file(path, file_name, trash, deletion_date)?;
     move_file(path, &file_in_trash)?;
 
     Ok(file_name.into())
@@ -112,14 +122,6 @@ pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
         .duration_since(UNIX_EPOCH)
         .expect("it seems that time went backwards!");
 
-    // TODO:
-    // From the FreeDesktop Trash spec 1.0:
-    //
-    //```
-    //   When trashing a file or directory, the implementation
-    //   MUST create the corresponding file in $trash/info first
-    //```
-
     let _file_name = _send_to_trash(&path, trash, now)?;
 
     if path.is_dir() {
@@ -142,7 +144,7 @@ pub fn directory_size(path: impl AsRef<Path>) -> Result<u64> {
     let dir_size_in_blocks = WalkDir::new(path)
         .into_iter()
         .flatten()
-        .filter_map(|e| Lstat::lstat(&e.path()).ok())
+        .filter_map(|e| Lstat::lstat(e.path()).ok())
         .map(|file| file.blocks() as u64)
         .sum();
 

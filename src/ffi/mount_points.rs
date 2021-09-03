@@ -82,7 +82,7 @@ pub fn probe_mount_points_in(path: CString) -> Result<Vec<MountPoint>> {
 mod mount_point_probing_tests {
     use tempfile::NamedTempFile;
 
-    use std::{ffi::CString, io::Write, os::unix::prelude::OsStrExt};
+    use std::{collections::BTreeSet, ffi::CString, io::Write, os::unix::prelude::OsStrExt};
 
     use crate::ffi::mount_points::{probe_mount_points_in, MountPoint};
 
@@ -98,9 +98,8 @@ mod mount_point_probing_tests {
     devpts /dev/pts devpts rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000 0 0
 "#;
 
-    // Test not currently working
-    // #[test]
-    fn test_mount_points() {
+    #[test]
+    fn test_mount_point_probing() {
         let mut temp = NamedTempFile::new().unwrap();
 
         let temp_path = temp.path();
@@ -109,6 +108,8 @@ mod mount_point_probing_tests {
         write!(temp, "{}", TEST_MTAB).unwrap();
 
         let mount_points = probe_mount_points_in(temp_path_cstr).unwrap();
+
+        let mount_points: BTreeSet<_> = mount_points.into_iter().collect();
 
         let expected = vec![
             MountPoint {
@@ -120,16 +121,16 @@ mod mount_point_probing_tests {
                 fs_path_prefix: "/sys/kernel/security".into(),
             },
             MountPoint {
-                fs_name: "pstore\u{0}".into(),
-                fs_path_prefix: "/sys/fs/cgroup".into(),
+                fs_name: "devpts".into(),
+                fs_path_prefix: "/dev/pts".into(),
             },
             MountPoint {
                 fs_name: "tmpfs".into(),
                 fs_path_prefix: "/dev/shm".into(),
             },
             MountPoint {
-                fs_name: "devpts".into(),
-                fs_path_prefix: "/dev/pts".into(),
+                fs_name: "proc".into(),
+                fs_path_prefix: "/proc".into(),
             },
             MountPoint {
                 fs_name: "run".into(),
@@ -140,14 +141,16 @@ mod mount_point_probing_tests {
                 fs_path_prefix: "/dev".into(),
             },
             MountPoint {
+                fs_name: "sys".into(),
+                fs_path_prefix: "/sys".into(),
+            },
+            MountPoint {
                 fs_name: "/dev/sda2".into(),
                 fs_path_prefix: "/".into(),
             },
-            MountPoint {
-                fs_name: "hugetlbfs".into(),
-                fs_path_prefix: "s".into(),
-            },
         ];
+
+        let expected: BTreeSet<_> = expected.into_iter().collect();
 
         assert_eq!(mount_points, expected);
     }
