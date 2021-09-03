@@ -14,6 +14,8 @@ pub enum Error {
     InternalNulByte(#[from] NulError),
     #[error("Failed to obtain mount points")]
     FailedToObtainMountPoints,
+    #[error("A directory was expected but {0} isn't one")]
+    NotADirectory(PathBuf),
 
     // TODO: check errno when this happens and subdivide the errors
     #[error("stat failed")]
