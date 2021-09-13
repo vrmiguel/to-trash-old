@@ -31,7 +31,7 @@ fn test_send_to_trash() {
     let mut dummy = File::create(&*dummy_path).unwrap();
     dummy.write_all(&dummy_bytes()).unwrap();
 
-    trash::send_to_trash(dummy_path.as_os_str().to_os_string(), &trash).unwrap();
+    trash::send_to_trash(dummy_path.clone(), &trash).unwrap();
 
     // This path should no longer exist!
     assert!(!dummy_path.exists());

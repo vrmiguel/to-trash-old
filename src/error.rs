@@ -1,5 +1,5 @@
 use std::{
-    ffi::{NulError, OsString},
+    ffi::NulError,
     path::PathBuf,
     str::Utf8Error,
 };
@@ -21,7 +21,7 @@ pub enum Error {
     #[error("A directory was expected but {0} isn't one")]
     NotADirectory(PathBuf),
     #[error("Failed to find mount point for {0:?}")]
-    MountPointNotFound(OsString),
+    MountPointNotFound(PathBuf),
 
     // TODO: check errno when this happens and subdivide the errors
     #[error("stat failed")]

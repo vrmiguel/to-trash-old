@@ -40,9 +40,10 @@ fn mount_point_of_file(path: &Path) -> Option<&MountPoint> {
 fn main() -> Result<()> {
     let _ = dbg!(ffi::probe_mount_points());
 
-    for file in env::args_os() {
+    for file in env::args_os().skip(1) {
+        let file = PathBuf::from(file).canonicalize()?;
         let mount_point = mount_point_of_file(file.as_ref())
-            .ok_or_else(|| Error::MountPointNotFound(file.to_owned()))?;
+            .ok_or_else(|| Error::MountPointNotFound(file.clone()))?;
 
         if mount_point.is_home() {
             trash::send_to_trash(file, &HOME_TRASH)?

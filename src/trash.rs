@@ -59,9 +59,6 @@ pub fn make_unique_file_name(path: &Path, dir: &Path) -> OsString {
 /// In case of success, returns the name of the trashed file
 /// exactly as sent to `TRASH/files`.
 fn _send_to_trash(path: &Path, trash: &Trash, deletion_date: Duration) -> Result<OsString> {
-    // The path we receive should always be canonicalized
-    debug_assert!(fs::canonicalize(path).unwrap() == path);
-
     let file_name = path
         .file_name()
         .ok_or_else(|| Error::FailedToObtainFileName(path.into()))?;
@@ -106,8 +103,10 @@ fn _send_to_trash(path: &Path, trash: &Trash, deletion_date: Duration) -> Result
 }
 
 /// Sends a file to trash
-pub fn send_to_trash(to_be_removed: OsString, trash: &Trash) -> Result<()> {
-    let path = fs::canonicalize(&to_be_removed)?;
+pub fn send_to_trash(to_be_removed: PathBuf, trash: &Trash) -> Result<()> {
+    // Assumes that `path` is canonicalized
+    let path = to_be_removed;
+    debug_assert!(fs::canonicalize(&path).unwrap() == path);
 
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
