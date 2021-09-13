@@ -1,4 +1,8 @@
-use std::{ffi::NulError, path::PathBuf, str::Utf8Error};
+use std::{
+    ffi::{NulError, OsString},
+    path::PathBuf,
+    str::Utf8Error,
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -16,6 +20,8 @@ pub enum Error {
     FailedToObtainMountPoints,
     #[error("A directory was expected but {0} isn't one")]
     NotADirectory(PathBuf),
+    #[error("Failed to find mount point for {0:?}")]
+    MountPointNotFound(OsString),
 
     // TODO: check errno when this happens and subdivide the errors
     #[error("stat failed")]

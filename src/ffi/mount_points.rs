@@ -33,7 +33,7 @@ impl MountPoint {
 #[cfg(test)]
 mod mount_point_fns {
 
-    use crate::ffi::{home, MountPoint};
+    use crate::ffi::MountPoint;
 
     fn root() -> MountPoint {
         MountPoint {
