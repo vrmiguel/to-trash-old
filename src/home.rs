@@ -18,7 +18,8 @@ pub fn home_dir() -> Option<PathBuf> {
 /// Ref.: https://specifications.freedesktop.org/trash-spec/trashspec-1.0.html
 pub fn home_trash_path() -> PathBuf {
     if let Ok(xdg_home) = std::env::var("XDG_DATA_HOME") {
-        return PathBuf::from(xdg_home);
+        let xdg_home = PathBuf::from(xdg_home);
+        return xdg_home.join("Trash");
     }
 
     HOME_DIR.join(".local/share/Trash")
