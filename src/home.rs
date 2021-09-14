@@ -7,8 +7,8 @@ use crate::HOME_DIR;
 /// Will check for the HOME env. variable first, falling back to
 /// checking passwd if HOME isn't set.
 pub fn home_dir() -> Option<PathBuf> {
-    if let Ok(home_dir) = std::env::var("HOME") {
-        Some(PathBuf::from(home_dir))
+    if let Some(home_dir) = std::env::var_os("HOME") {
+        Some(home_dir.into())
     } else {
         ffi::get_home_dir()
     }
