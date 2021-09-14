@@ -17,8 +17,8 @@ pub fn home_dir() -> Option<PathBuf> {
 /// The path of the home trash directory, as specified by FreeDesktop's trash-spec 1.0
 /// Ref.: https://specifications.freedesktop.org/trash-spec/trashspec-1.0.html
 pub fn home_trash_path() -> PathBuf {
-    if let Ok(xdg_home) = std::env::var("XDG_DATA_HOME") {
-        let xdg_home = PathBuf::from(xdg_home);
+    if let Some(xdg_home) = std::env::var_os("XDG_DATA_HOME") {
+        let xdg_home: PathBuf = xdg_home.into();
         return xdg_home.join("Trash");
     }
 
