@@ -14,6 +14,8 @@ pub enum Error {
     NotADirectory(PathBuf),
     #[error("UnixString error: {0}")]
     UnixString(#[from] unixstring::Error),
+    #[error("The mount point of {0} was not found: {0}")]
+    MountPointNotFound(PathBuf)
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
