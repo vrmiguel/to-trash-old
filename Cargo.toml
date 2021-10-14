@@ -6,6 +6,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+cstr = "0.2.9"
+unixstring = "0.2.2"
 walkdir = "2.3.2"
 rayon = "1.5.1"
 libc = "0.2.99"

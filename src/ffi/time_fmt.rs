@@ -1,8 +1,9 @@
-use std::{ffi::CString, mem, str, time::Duration};
+use std::{ffi::CString, mem, time::Duration};
 
 use libc::{c_char, localtime_r, size_t, time, tm};
+use unixstring::UnixString;
 
-use crate::error::{Error, Result};
+use crate::error::Result;
 
 const BUF_SIZ: usize = 64;
 
@@ -15,14 +16,6 @@ extern "C" {
     ) -> size_t;
 
     pub fn tzset();
-}
-
-pub fn str_from_u8(buf: &[u8]) -> Result<&str> {
-    let first_nul_idx = buf.iter().position(|&c| c == b'\0').unwrap_or(buf.len());
-
-    let bytes = buf.get(0..first_nul_idx).ok_or(Error::StringFromBytes)?;
-
-    Ok(str::from_utf8(bytes)?)
 }
 
 pub fn format_time(now: Duration) -> Result<String> {
@@ -40,7 +33,7 @@ pub fn format_time(now: Duration) -> Result<String> {
     // Safety: localtime_r is memory safe, threadsafe.
     unsafe { localtime_r(&ltime as *const i64, &mut new_time as *mut tm) };
 
-    let mut char_buf = [0; BUF_SIZ];
+    let mut char_buf: [c_char; BUF_SIZ] = [0; BUF_SIZ];
 
     // RFC3339 timestamp
     // Safety: this unwrap is safe since CString::new only fails when
@@ -56,9 +49,9 @@ pub fn format_time(now: Duration) -> Result<String> {
         )
     };
 
-    let char_buf: Vec<_> = char_buf.iter().map(|&ch| ch as u8).collect();
+    let unx = unsafe { UnixString::from_ptr(char_buf.as_ptr()) };
 
-    Ok(str_from_u8(&char_buf)?.into())
+    Ok(unx.to_string_lossy().into())
 }
 
 #[cfg(test)]

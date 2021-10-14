@@ -1,11 +1,9 @@
-use std::ffi::CString;
 use std::fs::Permissions;
 use std::mem;
-use std::os::unix::ffi::OsStrExt;
 use std::os::unix::fs::PermissionsExt;
-use std::path::Path;
 
 use libc::lstat;
+use unixstring::UnixString;
 
 use crate::error::{Error, Result};
 
@@ -15,41 +13,56 @@ pub struct Lstat {
 
 #[allow(dead_code)]
 impl Lstat {
-    pub fn lstat(path: &Path) -> Result<Self> {
+    pub fn lstat(path: &UnixString) -> Result<Self> {
         Ok(Self {
             inner: _lstat(path)?,
         })
     }
 
-    pub fn mode(&self) -> u32 {
+    pub const fn mode(&self) -> u32 {
         self.inner.st_mode
+    }
+
+    pub const fn size(&self) -> i64 {
+        self.inner.st_size
+    }
+
+    pub const fn block_size(&self) -> i64 {
+        self.inner.st_blksize
     }
 
     pub fn permissions(&self) -> Permissions {
         Permissions::from_mode(self.mode())
     }
 
-    pub fn blocks(&self) -> i64 {
+    pub const fn blocks(&self) -> i64 {
         self.inner.st_blocks
     }
 
-    pub fn accessed(&self) -> u64 {
+    pub const fn accessed(&self) -> u64 {
         self.inner.st_atime as u64
     }
 
-    pub fn modified(&self) -> u64 {
+    pub const fn modified(&self) -> u64 {
         self.inner.st_mtime as u64
+    }
+
+    pub const fn owner_user_id(&self) -> u32 {
+        self.inner.st_uid
+    }
+
+    pub const fn owner_group_id(&self) -> u32 {
+        self.inner.st_gid
     }
 }
 
-fn _lstat(path: &Path) -> Result<libc::stat> {
-    let c_path = CString::new(path.as_os_str().as_bytes())?;
-    // The all-zero byte-pattern is a valid `struct stat`
+fn _lstat(path: &UnixString) -> Result<libc::stat> {
+    // Safety: The all-zero byte-pattern is a valid `struct stat`
     let mut stat_buf = unsafe { mem::zeroed() };
 
-    if -1 == unsafe { lstat(c_path.as_ptr(), &mut stat_buf) } {
-        // TODO: check errno
-        Err(Error::Stat)
+    if -1 == unsafe { lstat(path.as_ptr(), &mut stat_buf) } {
+        let io_err = std::io::Error::last_os_error();
+        Err(Error::Io(io_err))
     } else {
         Ok(stat_buf)
     }
@@ -57,19 +70,21 @@ fn _lstat(path: &Path) -> Result<libc::stat> {
 
 #[cfg(test)]
 mod tests {
-    use std::time::UNIX_EPOCH;
+    use std::{convert::TryFrom, time::UNIX_EPOCH};
 
     use tempfile::NamedTempFile;
+    use unixstring::UnixString;
 
     use super::Lstat;
 
     #[test]
     fn permissions() {
         let file = NamedTempFile::new().unwrap();
-        let path = file.path();
+        let path = file.path().to_owned();
         let permissions = path.metadata().unwrap().permissions();
+        let path = UnixString::try_from(path).unwrap();
 
-        assert_eq!(permissions, Lstat::lstat(path).unwrap().permissions());
+        assert_eq!(permissions, Lstat::lstat(&path).unwrap().permissions());
     }
 
     #[test]
@@ -85,7 +100,8 @@ mod tests {
             .unwrap()
             .as_secs();
 
-        let stat = Lstat::lstat(path).unwrap();
+        let unx = UnixString::try_from(path.to_owned()).unwrap();
+        let stat = Lstat::lstat(&unx).unwrap();
 
         assert_eq!(mod_timestamp, stat.modified());
     }

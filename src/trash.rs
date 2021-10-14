@@ -1,9 +1,4 @@
-use std::{
-    ffi::OsString,
-    fs,
-    path::{Path, PathBuf},
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::{convert::TryFrom, ffi::OsString, fs, path::{Path, PathBuf}, time::{SystemTime, UNIX_EPOCH}};
 
 use crate::{
     error::{Error, Result},
@@ -12,6 +7,7 @@ use crate::{
 use crate::{ffi::Lstat, move_file::move_file};
 
 use std::time::Duration;
+use unixstring::UnixString;
 use walkdir::WalkDir;
 
 #[derive(Debug)]
@@ -135,7 +131,11 @@ pub fn directory_size(path: impl AsRef<Path>) -> Result<u64> {
     let dir_size_in_blocks = WalkDir::new(path)
         .into_iter()
         .flatten()
-        .filter_map(|e| Lstat::lstat(e.path()).ok())
+        .map(|e| e.path().to_owned())
+        .map(UnixString::try_from)
+        .flatten()
+        .map(|x| Lstat::lstat(&x))
+        .flatten()
         .map(|file| file.blocks() as u64)
         .sum();
 
