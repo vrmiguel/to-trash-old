@@ -3,7 +3,7 @@ use std::{
     collections::BinaryHeap,
     ffi::{CStr, CString, OsStr},
     os::unix::prelude::OsStrExt,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use crate::error::{Error, Result};
@@ -13,6 +13,53 @@ use libc::{getmntent, setmntent};
 pub struct MountPoint {
     pub fs_name: String,
     pub fs_path_prefix: PathBuf,
+}
+
+#[allow(dead_code)]
+impl MountPoint {
+    pub fn is_root(&self) -> bool {
+        self.fs_path_prefix == Path::new("/")
+    }
+
+    pub fn is_home(&self) -> bool {
+        self.fs_path_prefix == Path::new("/home")
+    }
+
+    pub fn contains(&self, path: &Path) -> bool {
+        path.starts_with(&self.fs_path_prefix)
+    }
+}
+
+#[cfg(test)]
+mod mount_point_fns {
+
+    use crate::ffi::MountPoint;
+
+    fn root() -> MountPoint {
+        MountPoint {
+            fs_name: "/dev/sda2".into(),
+            fs_path_prefix: "/".into(),
+        }
+    }
+
+    fn home() -> MountPoint {
+        MountPoint {
+            fs_name: "/dev/sda2".into(),
+            fs_path_prefix: "/home".into(),
+        }
+    }
+
+    #[test]
+    fn is_root() {
+        assert!(root().is_root());
+        assert!(!home().is_root());
+    }
+
+    #[test]
+    fn is_home() {
+        assert!(!root().is_home());
+        assert!(home().is_home());
+    }
 }
 
 impl PartialOrd for MountPoint {

@@ -7,8 +7,8 @@ use crate::HOME_DIR;
 /// Will check for the HOME env. variable first, falling back to
 /// checking passwd if HOME isn't set.
 pub fn home_dir() -> Option<PathBuf> {
-    if let Ok(home_dir) = std::env::var("HOME") {
-        Some(PathBuf::from(home_dir))
+    if let Some(home_dir) = std::env::var_os("HOME") {
+        Some(home_dir.into())
     } else {
         ffi::get_home_dir()
     }
@@ -17,8 +17,9 @@ pub fn home_dir() -> Option<PathBuf> {
 /// The path of the home trash directory, as specified by FreeDesktop's trash-spec 1.0
 /// Ref.: https://specifications.freedesktop.org/trash-spec/trashspec-1.0.html
 pub fn home_trash_path() -> PathBuf {
-    if let Ok(xdg_home) = std::env::var("XDG_DATA_HOME") {
-        return PathBuf::from(xdg_home);
+    if let Some(xdg_home) = std::env::var_os("XDG_DATA_HOME") {
+        let xdg_home: PathBuf = xdg_home.into();
+        return xdg_home.join("Trash");
     }
 
     HOME_DIR.join(".local/share/Trash")

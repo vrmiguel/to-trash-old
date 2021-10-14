@@ -5,11 +5,7 @@ use std::{ffi::CStr, mem, ptr};
 
 use libc::{getpwuid_r, passwd};
 
-fn effective_user_id() -> u32 {
-    // Safety: the POSIX Programmer's Manual states that
-    // geteuid will always be successful.
-    unsafe { libc::geteuid() }
-}
+use super::effective_user_id;
 
 pub fn get_home_dir() -> Option<PathBuf> {
     let mut buf = [0; 2048];
