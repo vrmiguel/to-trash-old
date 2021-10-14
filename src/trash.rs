@@ -1,4 +1,10 @@
-use std::{convert::TryFrom, ffi::OsString, fs, path::{Path, PathBuf}, time::{SystemTime, UNIX_EPOCH}};
+use std::{
+    convert::TryFrom,
+    ffi::OsString,
+    fs,
+    path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use crate::{
     error::{Error, Result},

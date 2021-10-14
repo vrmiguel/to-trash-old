@@ -1,5 +1,6 @@
-use std::{ffi::CString, mem, time::Duration};
+use std::{mem, time::Duration};
 
+use cstr::cstr;
 use libc::{c_char, localtime_r, size_t, time, tm};
 use unixstring::UnixString;
 
@@ -36,9 +37,7 @@ pub fn format_time(now: Duration) -> Result<String> {
     let mut char_buf: [c_char; BUF_SIZ] = [0; BUF_SIZ];
 
     // RFC3339 timestamp
-    // Safety: this unwrap is safe since CString::new only fails when
-    // the given string has an interior nul char.
-    let format = CString::new("%Y-%m-%dT%T").unwrap();
+    let format = cstr!("%Y-%m-%dT%T");
 
     unsafe {
         strftime(

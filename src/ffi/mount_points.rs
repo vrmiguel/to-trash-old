@@ -1,13 +1,14 @@
 use std::{
     cmp::Reverse,
     collections::BinaryHeap,
-    ffi::{CStr, CString, OsStr},
-    os::unix::prelude::OsStrExt,
+    ffi::CStr,
     path::{Path, PathBuf},
 };
 
 use crate::error::{Error, Result};
+use cstr::cstr;
 use libc::{getmntent, setmntent};
+use unixstring::UnixString;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct MountPoint {
@@ -78,15 +79,15 @@ impl Ord for MountPoint {
 }
 
 pub fn probe_mount_points() -> Result<Vec<MountPoint>> {
-    let path = CString::new("/etc/mtab")?;
+    let path = cstr!("/etc/mtab");
 
     probe_mount_points_in(path)
 }
 
-pub fn probe_mount_points_in(path: CString) -> Result<Vec<MountPoint>> {
+pub fn probe_mount_points_in(path: &CStr) -> Result<Vec<MountPoint>> {
     let mut mount_points = BinaryHeap::new();
 
-    let read_arg = CString::new("r")?;
+    let read_arg = cstr!("r");
     let file = unsafe { setmntent(path.as_ptr(), read_arg.as_ptr()) };
 
     if file.is_null() {
@@ -103,17 +104,13 @@ pub fn probe_mount_points_in(path: CString) -> Result<Vec<MountPoint>> {
         let fs_name = unsafe { (*entry).mnt_fsname };
         let fs_dir = unsafe { (*entry).mnt_dir };
 
-        let fs_name_cstr = unsafe { CStr::from_ptr(fs_name) };
-        let fs_name_cstr = OsStr::from_bytes(fs_name_cstr.to_bytes());
-        let fs_name_str = String::from_utf8_lossy(fs_name_cstr.as_bytes());
+        let fs_name = unsafe { UnixString::from_ptr(fs_name) };
 
-        let fs_dir_cstr = unsafe { CStr::from_ptr(fs_dir) };
-        let fs_dir_cstr = OsStr::from_bytes(fs_dir_cstr.to_bytes());
-        let fs_dir_path = PathBuf::from(fs_dir_cstr);
+        let fs_dir = unsafe { UnixString::from_ptr(fs_dir) };
 
         let mount_point = MountPoint {
-            fs_name: fs_name_str.into(),
-            fs_path_prefix: fs_dir_path,
+            fs_name: fs_name.to_string_lossy().into(),
+            fs_path_prefix: fs_dir.into(),
         };
         mount_points.push(Reverse(mount_point));
     }
@@ -154,7 +151,7 @@ mod mount_point_probing_tests {
 
         write!(temp, "{}", TEST_MTAB).unwrap();
 
-        let mount_points = probe_mount_points_in(temp_path_cstr).unwrap();
+        let mount_points = probe_mount_points_in(&temp_path_cstr).unwrap();
 
         let mount_points: BTreeSet<_> = mount_points.into_iter().collect();
 
