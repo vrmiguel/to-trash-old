@@ -61,6 +61,10 @@ pub fn make_unique_file_name(path: &Path, dir: &Path) -> OsString {
 /// In case of success, returns the name of the trashed file
 /// exactly as sent to `TRASH/files`.
 fn _send_to_trash(path: &Path, trash: &Trash, deletion_date: Duration) -> Result<OsString> {
+
+    #[cfg(debug_assertions)]
+    dbg!(path, trash, &deletion_date);
+
     let file_name = path
         .file_name()
         .ok_or_else(|| Error::FailedToObtainFileName(path.into()))?;

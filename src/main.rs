@@ -18,6 +18,8 @@ use ffi::MountPoint;
 use lazy_static::lazy_static;
 use trash::Trash;
 
+use crate::ffi::probe_mount_points;
+
 lazy_static! {
     pub static ref HOME_DIR: PathBuf =
         home::home_dir().expect("failed to obtain user's home directory!");
@@ -38,14 +40,16 @@ fn mount_point_of_file(path: &Path) -> Option<&MountPoint> {
 }
 
 fn main() -> Result<()> {
-    let _ = dbg!(ffi::probe_mount_points());
 
     for file in env::args_os().skip(1) {
         let file = PathBuf::from(file).canonicalize()?;
+
         let mount_point = mount_point_of_file(file.as_ref())
             .ok_or_else(|| Error::MountPointNotFound(file.clone()))?;
 
-        if mount_point.is_home() {
+        let is_home = file.starts_with("/home") || mount_point.is_home();
+
+        if is_home {
             trash::send_to_trash(file, &HOME_TRASH)?
         } else {
             // TODO: buncha stuff
